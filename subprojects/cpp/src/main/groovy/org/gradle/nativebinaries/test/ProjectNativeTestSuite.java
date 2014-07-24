@@ -24,6 +24,18 @@ import org.gradle.nativebinaries.ProjectNativeComponent;
 @Incubating
 public interface ProjectNativeTestSuite extends ProjectNativeComponent {
     /**
+     * @see setTestedComponent(ProjectNativeComponent)
+     */
+    ProjectNativeTestSuite testedComponent(ProjectNativeComponent testedComponent);
+
+    /**
+     * Sets the tested component.
+     *
+     * @param testedComponent the native component to test
+     */
+    void setTestedComponent(ProjectNativeComponent testedComponent);
+
+    /**
      * The tested component.
      */
     ProjectNativeComponent getTestedComponent();

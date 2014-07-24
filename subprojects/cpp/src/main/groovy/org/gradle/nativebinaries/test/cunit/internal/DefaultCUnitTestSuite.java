@@ -15,23 +15,51 @@
  */
 package org.gradle.nativebinaries.test.cunit.internal;
 
+import org.gradle.api.Action;
+import org.gradle.api.plugins.ExtensionAware;
+import org.gradle.internal.reflect.Instantiator;
+import org.gradle.language.base.LanguageSourceSet;
+import org.gradle.nativebinaries.ProjectNativeBinary;
 import org.gradle.nativebinaries.ProjectNativeComponent;
 import org.gradle.nativebinaries.internal.AbstractProjectNativeComponent;
+import org.gradle.nativebinaries.internal.ProjectNativeBinaryInternal;
+import org.gradle.nativebinaries.internal.resolve.NativeDependencyResolver;
+import org.gradle.nativebinaries.language.internal.DefaultPreprocessingTool;
 import org.gradle.nativebinaries.test.cunit.CUnitTestSuite;
+import org.gradle.nativebinaries.test.cunit.CUnitTestSuiteBinary;
 import org.gradle.runtime.base.NamedProjectComponentIdentifier;
+import org.gradle.runtime.base.internal.BinaryNamingScheme;
+import org.gradle.runtime.base.internal.DefaultBinaryNamingSchemeBuilder;
 
 public class DefaultCUnitTestSuite extends AbstractProjectNativeComponent implements CUnitTestSuite {
-    private final ProjectNativeComponent testedComponent;
+    private ProjectNativeComponent testedComponent;
+    private final ConfigureCUnitTestSources configureCUnitTestSources;
+    private final CreateCUnitBinaries createCUnitBinaries;
 
-    public DefaultCUnitTestSuite(NamedProjectComponentIdentifier id, ProjectNativeComponent testedComponent) {
+    public DefaultCUnitTestSuite(NamedProjectComponentIdentifier id, ConfigureCUnitTestSources configureCUnitTestSources, CreateCUnitBinaries createCUnitBinaries) {
         super(id);
-        this.testedComponent = testedComponent;
+        this.configureCUnitTestSources = configureCUnitTestSources;
+        this.createCUnitBinaries = createCUnitBinaries;
     }
 
     public String getDisplayName() {
         return String.format("cunit tests '%s'", getName());
     }
 
+    public DefaultCUnitTestSuite testedComponent(ProjectNativeComponent testedComponent) {
+        setTestedComponent(testedComponent);
+        return this;
+    }
+    public void setTestedComponent(ProjectNativeComponent testedComponent) {
+        if (this.testedComponent != null) {
+            throw new IllegalArgumentException("You cannot change the tested component once it's setup");
+        } else {
+            this.testedComponent = testedComponent;
+
+            configureCUnitTestSources.apply(this);
+            createCUnitBinaries.apply(this);
+        }
+    }
     public ProjectNativeComponent getTestedComponent() {
         return testedComponent;
     }

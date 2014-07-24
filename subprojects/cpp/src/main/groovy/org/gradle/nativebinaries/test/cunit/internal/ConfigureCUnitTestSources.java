@@ -39,7 +39,7 @@ public class ConfigureCUnitTestSources {
         cUnitTestSuite.source(launcherSources);
         createCUnitLauncherTask(cUnitTestSuite, launcherSources);
 
-        CSourceSet testSources = suiteSourceSet.maybeCreate("cunit", CSourceSet.class);
+        CSourceSet testSources = suiteSourceSet.maybeCreate("c", CSourceSet.class);
         cUnitTestSuite.source(testSources);
         testSources.lib(launcherSources);
 

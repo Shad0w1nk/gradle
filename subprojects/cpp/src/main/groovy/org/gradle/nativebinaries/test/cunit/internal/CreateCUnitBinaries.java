@@ -37,14 +37,16 @@ public class CreateCUnitBinaries {
     private final ProjectInternal project;
     private final Instantiator instantiator;
     private final NativeDependencyResolver resolver;
+    private final BinaryContainer binaries;
 
-    public CreateCUnitBinaries(ProjectInternal project, Instantiator instantiator, NativeDependencyResolver resolver) {
+    public CreateCUnitBinaries(ProjectInternal project, Instantiator instantiator, NativeDependencyResolver resolver, BinaryContainer binaries) {
         this.project = project;
         this.instantiator = instantiator;
         this.resolver = resolver;
+        this.binaries = binaries;
     }
 
-    public void apply(final CUnitTestSuite cUnitTestSuite, final BinaryContainer binaries) {
+    public void apply(final CUnitTestSuite cUnitTestSuite) {
         cUnitTestSuite.getTestedComponent().getBinaries().withType(ProjectNativeBinaryInternal.class).all(new Action<ProjectNativeBinaryInternal>() {
             public void execute(ProjectNativeBinaryInternal testedBinary) {
                 final ProjectNativeBinary cunitExe = createTestBinary(cUnitTestSuite, testedBinary, project);

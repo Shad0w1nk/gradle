@@ -28,13 +28,33 @@ class CUnitTest extends Specification {
         given:
         project.plugins.apply(CPlugin)
         project.libraries.create("main")
+        project.plugins.apply(CUnitPlugin)
 
         when:
-        project.plugins.apply(CUnitPlugin)
+        project.testSuites.create("mainTest", CUnitTestSuite) {
+            testedComponent project.libraries.main
+        }
         project.evaluate()
 
         then:
         def binaries = project.getExtensions().getByType(TestSuiteContainer).getByName("mainTest").binaries
         binaries.collect({it instanceof CUnitTestSuiteBinary}) == [true]*binaries.size()
+    }
+
+    def "check the tested component cannot be changed once it is set"() {
+        given:
+        project.plugins.apply(CPlugin)
+        project.libraries.create("main")
+        project.libraries.create("anotherMain")
+        project.plugins.apply(CUnitPlugin)
+        project.testSuites.create("mainTest", CUnitTestSuite) {
+            testedComponent project.libraries.main
+        }
+
+        when:
+        project.testSuites.mainTest.testedComponent project.libraries.anotherMain
+
+        then:
+        thrown IllegalArgumentException
     }
 }

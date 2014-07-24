@@ -628,16 +628,19 @@
         <title>CUnit support</title>
         <para>
             The Gradle <literal>cunit</literal> plugin provides support for compiling and executing CUnit tests in your native-binary project.
-            For each <apilink class="org.gradle.nativebinaries.NativeExecutable"/> and <apilink class="org.gradle.nativebinaries.NativeLibrary"/>
-            defined in your project, Gradle will create a matching <apilink class="org.gradle.nativebinaries.test.cunit.CUnitTestSuite"/> component,
-            named <literal>${component.name}Test</literal>.
+            Each CUnit test suites must be explicitly specified via the <literal>testSuites</literal> container. Once the test suite is declared,
+            the component under test - <apilink class="org.gradle.nativebinaries.NativeExecutable"/> or <apilink class="org.gradle.nativebinaries.NativeLibrary"/> - 
+            must be specified.
         </para>
+        <sample id="cunitSources" dir="native-binaries/cunit" title="Declare CUnit test suite">
+          <sourcefile file="build.gradle" snippet="declare-test-suite"/>
+        </sample>
         <section>
             <title>CUnit sources</title>
             <para>
-                Gradle will create a <apilink class="org.gradle.language.c.CSourceSet"/> named 'cunit' for each <apilink class="org.gradle.nativebinaries.test.cunit.CUnitTestSuite"/> component
+                Gradle will create a <apilink class="org.gradle.language.c.CSourceSet"/> named 'c' for each <apilink class="org.gradle.nativebinaries.test.cunit.CUnitTestSuite"/> component
                 in the project. This source set should contain the cunit test files for the component sources. Source files can be located in the conventional location
-                (<literal>src/${component.name}Test/cunit</literal>) or can be configured like any other source set.
+                (<literal>src/${testSuiteComponent.name}/c</literal>) or can be configured like any other source set.
             </para>
             <para>
                 The job of initialising the CUnit test registry and executing the tests is performed by Gradle, via some generated CUnit launcher sources.
@@ -657,8 +660,6 @@
             <para>
                 A <apilink class="org.gradle.nativebinaries.test.cunit.CUnitTestSuite"/> component has an associated
                 <apilink class="org.gradle.nativebinaries.NativeExecutable"/> or <apilink class="org.gradle.nativebinaries.NativeLibrary"/> component.
-                For each <apilink class="org.gradle.nativebinaries.ProjectNativeBinary"/> configured for the main component, a matching
-                <apilink class="org.gradle.nativebinaries.test.cunit.CUnitTestSuiteBinary"/> will be configured on the test suite component.
                 These test suite binaries can be configured in a similar way to any other binary instance:
             </para>
             <sample id="cunitSources" dir="native-binaries/cunit" title="Registering CUnit tests">

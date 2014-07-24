@@ -53,19 +53,22 @@ public class CUnitPlugin implements Plugin<ProjectInternal> {
 
         TestSuiteContainer testSuites = project.getExtensions().getByType(TestSuiteContainer)
         BinaryContainer binaries = project.getExtensions().getByType(BinaryContainer)
-        project.nativeComponents.all { ProjectNativeComponent component ->
-            testSuites.add createCUnitTestSuite(component, binaries, project)
-        }
+
+        testSuites.registerFactory(CUnitTestSuite.class, {String suiteName ->
+            createCUnitTestSuite(suiteName, binaries, project);
+        })
     }
 
-    private CUnitTestSuite createCUnitTestSuite(ProjectNativeComponent testedComponent, BinaryContainer binaries, ProjectInternal project) {
-        String suiteName = "${testedComponent.name}Test"
-        String path = testedComponent.projectPath
+    private CUnitTestSuite createCUnitTestSuite(String suiteName, BinaryContainer binaries, ProjectInternal project) {
+        String path = project.path
         NamedProjectComponentIdentifier id = new DefaultNamedProjectComponentIdentifier(path, suiteName);
-        CUnitTestSuite cUnitTestSuite = instantiator.newInstance(DefaultCUnitTestSuite, id, testedComponent);
-
-        new ConfigureCUnitTestSources(project).apply(cUnitTestSuite)
-        new CreateCUnitBinaries(project, instantiator, resolver).apply(cUnitTestSuite, binaries);
+        CUnitTestSuite cUnitTestSuite = 
+            instantiator.newInstance(
+                DefaultCUnitTestSuite, 
+                id, 
+                new ConfigureCUnitTestSources(project), 
+                new CreateCUnitBinaries(project, instantiator, resolver, binaries)
+            );
         return cUnitTestSuite;
     }
 }
