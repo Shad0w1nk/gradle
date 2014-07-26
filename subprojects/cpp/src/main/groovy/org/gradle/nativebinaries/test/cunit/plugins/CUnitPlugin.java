@@ -17,7 +17,7 @@
 package org.gradle.nativebinaries.test.cunit.plugins;
 
 import org.gradle.api.Incubating;
-import org.gradle.api.NamedDomainObjectSet;
+import org.gradle.api.NamedDomainObjectFactory;
 import org.gradle.api.Plugin;
 import org.gradle.api.internal.project.ProjectInternal;
 import org.gradle.api.plugins.ExtensionAware;
@@ -32,7 +32,9 @@ import org.gradle.language.c.plugins.CLangPlugin;
 import org.gradle.model.Mutate;
 import org.gradle.model.Path;
 import org.gradle.model.RuleSource;
-import org.gradle.nativebinaries.NativeComponentSpec;
+import org.gradle.model.internal.core.ModelPath;
+import org.gradle.model.internal.core.ModelType;
+import org.gradle.model.internal.registry.ModelRegistry;
 import org.gradle.nativebinaries.NativeBinarySpec;
 import org.gradle.nativebinaries.internal.NativeBinarySpecInternal;
 import org.gradle.nativebinaries.internal.resolve.NativeDependencyResolver;
@@ -51,6 +53,7 @@ import org.gradle.runtime.base.internal.BinaryNamingScheme;
 import org.gradle.runtime.base.internal.DefaultBinaryNamingSchemeBuilder;
 import org.gradle.runtime.base.internal.DefaultComponentSpecIdentifier;
 
+import javax.inject.Inject;
 import java.io.File;
 
 /**
@@ -58,10 +61,30 @@ import java.io.File;
  */
 @Incubating
 public class CUnitPlugin implements Plugin<ProjectInternal> {
+    private final Instantiator instantiator;
+    private final ModelRegistry modelRegistry;
+
+    @Inject
+    public CUnitPlugin(Instantiator instantiator, ModelRegistry modelRegistry) {
+        this.instantiator = instantiator;
+        this.modelRegistry = modelRegistry;
+    }
 
     public void apply(final ProjectInternal project) {
         project.getPlugins().apply(NativeBinariesTestPlugin.class);
         project.getPlugins().apply(CLangPlugin.class);
+
+        TestSuiteContainer testSuites = modelRegistry.get(ModelPath.path("testSuites"), ModelType.of(TestSuiteContainer.class));
+        testSuites.registerFactory(CUnitTestSuite.class, new NamedDomainObjectFactory<CUnitTestSuite>() {
+            public CUnitTestSuite create(String name) {
+                return createCUnitTestSuite(name, project.getPath(), instantiator);
+            }
+        });
+    }
+
+    private CUnitTestSuite createCUnitTestSuite(String suiteName, String path, Instantiator instantiator) {
+        ComponentSpecIdentifier id = new DefaultComponentSpecIdentifier(path, suiteName);
+        return instantiator.newInstance(DefaultCUnitTestSuite.class, id);
     }
 
     /**
@@ -72,21 +95,6 @@ public class CUnitPlugin implements Plugin<ProjectInternal> {
     public static class Rules {
 
         private static final String CUNIT_LAUNCHER_SOURCE_SET = "cunitLauncher";
-
-        @Mutate
-        public void createCUnitTestSuitePerComponent(TestSuiteContainer testSuites, NamedDomainObjectSet<NativeComponentSpec> components, ServiceRegistry serviceRegistry) {
-            Instantiator instantiator = serviceRegistry.get(Instantiator.class);
-            for (NativeComponentSpec component : components) {
-                testSuites.add(createCUnitTestSuite(component, instantiator));
-            }
-        }
-
-        private CUnitTestSuite createCUnitTestSuite(final NativeComponentSpec testedComponent, Instantiator instantiator) {
-            String suiteName = String.format("%sTest", testedComponent.getName());
-            String path = testedComponent.getProjectPath();
-            ComponentSpecIdentifier id = new DefaultComponentSpecIdentifier(path, suiteName);
-            return instantiator.newInstance(DefaultCUnitTestSuite.class, id, testedComponent);
-        }
 
         @Mutate
         public void configureCUnitTestSuiteSources(ProjectSourceSet projectSourceSet, TestSuiteContainer testSuites, @Path("buildDir") File buildDir) {

@@ -30,9 +30,12 @@ class CUnitTest extends Specification {
         given:
         project.plugins.apply(CPlugin)
         project.libraries.create("main")
+        project.plugins.apply(CUnitPlugin)
 
         when:
-        project.plugins.apply(CUnitPlugin)
+        project.modelRegistry.get(ModelPath.path("testSuites"), ModelType.of(TestSuiteContainer)).create("mainTest", CUnitTestSuite) {
+            testedComponent project.libraries.main
+        }
         project.evaluate()
 
         then:

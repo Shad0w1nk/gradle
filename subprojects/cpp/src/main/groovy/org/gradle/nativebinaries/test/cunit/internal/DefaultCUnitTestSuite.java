@@ -18,21 +18,15 @@ package org.gradle.nativebinaries.test.cunit.internal;
 import org.gradle.nativebinaries.NativeComponentSpec;
 import org.gradle.nativebinaries.internal.AbstractNativeComponentSpec;
 import org.gradle.nativebinaries.test.cunit.CUnitTestSuite;
+import org.gradle.nativebinaries.test.internal.AbstractNativeTestSuiteSpec;
 import org.gradle.runtime.base.ComponentSpecIdentifier;
 
-public class DefaultCUnitTestSuite extends AbstractNativeComponentSpec implements CUnitTestSuite {
-    private final NativeComponentSpec testedComponent;
-
-    public DefaultCUnitTestSuite(ComponentSpecIdentifier id, NativeComponentSpec testedComponent) {
-        super(id);
-        this.testedComponent = testedComponent;
+public class DefaultCUnitTestSuite extends AbstractNativeTestSuiteSpec<DefaultCUnitTestSuite> implements CUnitTestSuite {
+    public DefaultCUnitTestSuite(ComponentSpecIdentifier id) {
+        super(id, DefaultCUnitTestSuite.class);
     }
 
     public String getDisplayName() {
         return String.format("cunit test suite '%s'", getName());
-    }
-
-    public NativeComponentSpec getTestedComponent() {
-        return testedComponent;
     }
 }
