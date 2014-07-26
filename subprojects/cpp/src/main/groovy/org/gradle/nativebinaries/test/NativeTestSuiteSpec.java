@@ -24,9 +24,18 @@ import org.gradle.nativebinaries.NativeComponentSpec;
 @Incubating
 public interface NativeTestSuiteSpec extends NativeComponentSpec {
 
+    /**
+     * @see org.gradle.nativebinaries.test.NativeTestSuiteSpec#setTestedComponent(org.gradle.nativebinaries.NativeComponentSpec)
+     */
     NativeTestSuiteSpec testedComponent(NativeComponentSpec testedComponent);
 
+    /**
+     * Sets the tested component.
+     *
+     * @param testedComponent the native component to test
+     */
     void setTestedComponent(NativeComponentSpec testedComponent);
+
     /**
      * The tested component.
      */

@@ -22,6 +22,17 @@ model {
 libraries {
     operators {}
 }
+
+// START SNIPPET declare-test-suite
+model {
+    testSuites {
+        operatorsTest(CUnitTestSuite) {
+            testedComponent libraries.operators
+        }
+    }
+}
+// END SNIPPET declare-test-suite
+
 // START SNIPPET configure-test-binary
 binaries.withType(CUnitTestSuiteBinary) {
     lib library: "cunit", linkage: "static"
