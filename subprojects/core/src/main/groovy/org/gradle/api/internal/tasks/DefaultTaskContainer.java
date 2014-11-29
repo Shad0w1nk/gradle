@@ -220,7 +220,7 @@ public class DefaultTaskContainer extends DefaultTaskCollection<Task> implements
         placeholders.put(placeholderName, runnable);
     }
 
-    public <U extends Task> NamedDomainObjectContainer<U> containerWithType(Class<U> type) {
+    public <U extends Task> PolymorphicDomainObjectContainer<U> containerWithType(Class<U> type) {
         throw new UnsupportedOperationException();
     }
 

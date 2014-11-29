@@ -80,7 +80,7 @@ public interface PolymorphicDomainObjectContainer<T> extends NamedDomainObjectCo
      *
      * @param type the type of the container elements
      * @param <U> the type of the container elements
-     * @return a {@link NamedDomainObjectContainer} providing access to elements of type U.
+     * @return a {@link PolymorphicDomainObjectContainer} providing access to elements of type U and derived types.
      */
-    <U extends T> NamedDomainObjectContainer<U> containerWithType(Class<U> type);
+    <U extends T> PolymorphicDomainObjectContainer<U> containerWithType(Class<U> type);
 }

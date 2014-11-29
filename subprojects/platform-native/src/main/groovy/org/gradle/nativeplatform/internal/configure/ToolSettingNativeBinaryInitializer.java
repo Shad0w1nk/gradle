@@ -33,6 +33,7 @@ public class ToolSettingNativeBinaryInitializer implements Action<NativeBinarySp
 
     // TODO:DAZ This should only add tools for transforms that apply.
     public void execute(NativeBinarySpec nativeBinary) {
+        // TODO(daniel): Should a check with applyToBinary be used here
         for (LanguageTransform<?, ?> language : languageTransforms) {
             Map<String, Class<?>> binaryTools = language.getBinaryTools();
             for (String toolName : binaryTools.keySet()) {

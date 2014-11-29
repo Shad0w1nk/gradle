@@ -30,15 +30,16 @@ public class FilteredCollection<T, S extends T> implements Collection<S> {
     }
     
     public boolean add(S o) {
-        throw new UnsupportedOperationException(String.format("Cannot add '%s' to '%s' as it is a filtered collection", o, this));
+        return collection.add(o);
     }
 
     public boolean addAll(Collection<? extends S> c) {
-        throw new UnsupportedOperationException(String.format("Cannot add all from '%s' to '%s' as it is a filtered collection", c, this));
+        return collection.addAll(c);
     }
 
+    // TODO(daniel): clear ONLY the items that reflect the filtering
     public void clear() {
-        throw new UnsupportedOperationException(String.format("Cannot clear '%s' as it is a filtered collection", this));
+        collection.clear();
     }
     
     protected boolean accept(Object o) {
@@ -122,7 +123,7 @@ public class FilteredCollection<T, S extends T> implements Collection<S> {
         }
         
         public void remove() {
-            throw new UnsupportedOperationException("This iterator does not support removal");
+            iterator.remove();
         }
     } 
     
@@ -130,16 +131,19 @@ public class FilteredCollection<T, S extends T> implements Collection<S> {
         return new FilteringIterator<T, S>(collection.iterator(), filter);
     }
 
+    // TODO(daniel): Make sure it does remove an object higher in the inheritance hierarchy (runs it through accept)
     public boolean remove(Object o) {
-        throw new UnsupportedOperationException(String.format("Cannot remove '%s' from '%s' as it is a filtered collection", o, this));
-    }
-    
-    public boolean removeAll(Collection<?> c) {
-        throw new UnsupportedOperationException(String.format("Cannot remove all of '%s' from '%s' as it is a filtered collection", c, this));
+        return collection.remove(o);
     }
 
+    // TODO(daniel): Make sure it does remove an object higher in the inheritance hierarchy (runs it through accept)
+    public boolean removeAll(Collection<?> c) {
+        return collection.removeAll(c);
+    }
+
+    // TODO(daniel): Make sure it does retain an object higher in the inheritance hierarchy (runs it through accept)
     public boolean retainAll(Collection<?> c) {
-        throw new UnsupportedOperationException(String.format("Cannot retain all of '%s' from '%s' as it is a filtered collection", c, this));
+        return collection.retainAll(c);
     }
 
     public int size() {

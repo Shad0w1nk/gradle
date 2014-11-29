@@ -17,9 +17,14 @@ package org.gradle.api.internal;
 
 import groovy.lang.Closure;
 import org.gradle.api.*;
+import org.gradle.api.internal.collections.CollectionEventRegister;
+import org.gradle.api.internal.collections.CollectionFilter;
+import org.gradle.api.internal.plugins.DefaultConvention;
 import org.gradle.internal.Actions;
 import org.gradle.internal.reflect.Instantiator;
 import org.gradle.util.ConfigureUtil;
+
+import java.util.Set;
 
 public abstract class AbstractNamedDomainObjectContainer<T> extends DefaultNamedDomainObjectSet<T> implements NamedDomainObjectContainer<T> {
 
@@ -29,6 +34,14 @@ public abstract class AbstractNamedDomainObjectContainer<T> extends DefaultNamed
 
     protected AbstractNamedDomainObjectContainer(Class<T> type, Instantiator instantiator) {
         super(type, instantiator, Named.Namer.forType(type));
+    }
+
+    protected AbstractNamedDomainObjectContainer(Class<? extends T> type, Set<T> store, CollectionEventRegister<T> eventRegister, Instantiator instantiator, Namer<? super T> namer) {
+        super(type, store, eventRegister, instantiator, namer);
+    }
+
+    protected AbstractNamedDomainObjectContainer(AbstractNamedDomainObjectContainer<? super T> collection, CollectionFilter<T> filter, Instantiator instantiator, Namer<? super T> namer) {
+        this(filter.getType(), collection.filteredStore(filter), collection.filteredEvents(filter), instantiator, namer);
     }
 
     /**

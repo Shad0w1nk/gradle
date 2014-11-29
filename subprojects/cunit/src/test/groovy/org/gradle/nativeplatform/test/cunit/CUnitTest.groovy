@@ -14,12 +14,15 @@
  * limitations under the License.
  */
 package org.gradle.nativeplatform.test.cunit
+
+import org.gradle.api.NamedDomainObjectContainer
 import org.gradle.language.c.plugins.CPlugin
 import org.gradle.model.internal.core.ModelPath
 import org.gradle.model.internal.type.ModelType
 import org.gradle.nativeplatform.NativeLibrarySpec
-import org.gradle.platform.base.test.TestSuiteContainer
+import org.gradle.nativeplatform.test.TestSuiteContainer
 import org.gradle.nativeplatform.test.cunit.plugins.CUnitPlugin
+import org.gradle.platform.base.ComponentSpecContainer
 import org.gradle.util.TestUtil
 import spock.lang.Specification
 
@@ -32,13 +35,42 @@ class CUnitTest extends Specification {
         project.pluginManager.apply(CUnitPlugin)
         project.model {
             components {
-                main(NativeLibrarySpec)
+                main(NativeLibrarySpec) {
+                    testSuites {
+                        mainTest(CUnitTestSuiteSpec)
+                    }
+                }
             }
         }
         project.evaluate()
 
         then:
-        def binaries = project.modelRegistry.get(ModelPath.path("testSuites"), ModelType.of(TestSuiteContainer)).getByName("mainTest").binaries
+        def binaries = project.modelRegistry.get(ModelPath.path("testSuites"), ModelType.of(NamedDomainObjectContainer)).getByName("mainTest").binaries
+        binaries.size() == 1
         binaries.collect({ it instanceof CUnitTestSuiteBinarySpec }) == [true] * binaries.size()
+    }
+
+    def "create test suite not attached to a specific component"() {
+        given:
+        project.apply(plugin: CPlugin)
+        project.apply(plugin: CUnitPlugin)
+        project.model {
+            components {
+                main(NativeLibrarySpec)
+            }
+
+            testSuites {
+                unrelatedTest(CUnitTestSuiteSpec)
+            }
+        }
+
+        when:
+        project.evaluate()
+
+        then:
+        def testSuites = project.modelRegistry.get(ModelPath.path("testSuites"), ModelType.of(NamedDomainObjectContainer))
+        testSuites.size() == 1
+        testSuites.iterator().next() instanceof CUnitTestSuiteSpec
+        testSuites.iterator().next().getTestedComponent() == null
     }
 }

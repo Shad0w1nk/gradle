@@ -16,9 +16,8 @@
 
 package org.gradle.nativeplatform.test.plugins;
 
-import org.gradle.api.Incubating;
-import org.gradle.api.Plugin;
-import org.gradle.api.Project;
+import org.gradle.api.*;
+import org.gradle.api.specs.Spec;
 import org.gradle.api.tasks.TaskContainer;
 import org.gradle.internal.reflect.Instantiator;
 import org.gradle.internal.service.ServiceRegistry;
@@ -26,8 +25,12 @@ import org.gradle.language.base.plugins.LifecycleBasePlugin;
 import org.gradle.language.nativeplatform.DependentSourceSet;
 import org.gradle.model.Finalize;
 import org.gradle.model.Model;
+import org.gradle.model.Mutate;
 import org.gradle.model.RuleSource;
 import org.gradle.nativeplatform.NativeBinarySpec;
+import org.gradle.nativeplatform.NativeComponentSpec;
+import org.gradle.nativeplatform.NativeLibrarySpec;
+import org.gradle.nativeplatform.internal.DefaultNativeLibrarySpec;
 import org.gradle.nativeplatform.internal.NativeBinarySpecInternal;
 import org.gradle.nativeplatform.plugins.NativeComponentPlugin;
 import org.gradle.nativeplatform.tasks.InstallExecutable;
@@ -36,6 +39,7 @@ import org.gradle.platform.base.test.TestSuiteContainer;
 import org.gradle.platform.base.internal.test.DefaultTestSuiteContainer;
 import org.gradle.nativeplatform.test.tasks.RunTestExecutable;
 import org.gradle.platform.base.BinaryContainer;
+import org.gradle.platform.base.ComponentSpecContainer;
 import org.gradle.platform.base.internal.BinaryNamingScheme;
 
 import java.io.File;
@@ -56,9 +60,26 @@ public class NativeBinariesTestPlugin implements Plugin<Project> {
     @RuleSource
     public static class Rules {
         @Model
-        TestSuiteContainer testSuites(ServiceRegistry serviceRegistry) {
-            Instantiator instantiator = serviceRegistry.get(Instantiator.class);
-            return instantiator.newInstance(DefaultTestSuiteContainer.class, instantiator);
+        PolymorphicDomainObjectContainer<NativeTestSuiteSpec> testSuites(ComponentSpecContainer components) {
+            return components.containerWithType(NativeTestSuiteSpec.class);
+        }
+
+        @Model
+        NamedDomainObjectSet<NativeComponentSpec> nativeComponents(ComponentSpecContainer components) {
+            return components.withType(NativeComponentSpec.class).matching(new Spec<NativeComponentSpec>() {
+                public boolean isSatisfiedBy(NativeComponentSpec component) {
+                    return !(component instanceof NativeTestSuiteSpec);
+                }
+            });
+        }
+
+        @Mutate
+        public void registerTestSuitesContainerPerNativeLibrary(final ComponentSpecContainer components) {
+            components.withType(NativeLibrarySpec.class).whenObjectAdded(new Action<NativeLibrarySpec>() {
+                public void execute(NativeLibrarySpec library) {
+                    ((DefaultNativeLibrarySpec)library).setTestSuites(components.containerWithType(NativeTestSuiteSpec.class));
+                }
+            });
         }
 
         @Finalize

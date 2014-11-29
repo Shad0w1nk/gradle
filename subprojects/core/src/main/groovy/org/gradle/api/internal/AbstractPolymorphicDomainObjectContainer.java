@@ -18,13 +18,16 @@ package org.gradle.api.internal;
 import groovy.lang.Closure;
 import groovy.lang.MissingPropertyException;
 import org.gradle.api.*;
+import org.gradle.api.internal.collections.CollectionEventRegister;
+import org.gradle.api.internal.collections.CollectionFilter;
 import org.gradle.api.internal.plugins.DefaultConvention;
 import org.gradle.api.plugins.Convention;
 import org.gradle.internal.Transformers;
 import org.gradle.internal.reflect.Instantiator;
 import org.gradle.util.ConfigureUtil;
 
-import java.util.*;
+import java.util.Map;
+import java.util.Set;
 
 public abstract class AbstractPolymorphicDomainObjectContainer<T>
         extends AbstractNamedDomainObjectContainer<T> implements PolymorphicDomainObjectContainerInternal<T> {
@@ -37,6 +40,20 @@ public abstract class AbstractPolymorphicDomainObjectContainer<T>
         super(type, instantiator, namer);
         this.convention = new DefaultConvention(instantiator);
         this.dynamicObject = new ExtensibleDynamicObject(this, new ContainerDynamicObject(elementsDynamicObject), convention);
+    }
+
+    protected AbstractPolymorphicDomainObjectContainer(Class<T> type, Instantiator instantiator) {
+        this(type, instantiator, Named.Namer.forType(type));
+    }
+
+    protected AbstractPolymorphicDomainObjectContainer(Class<? extends T> type, Set<T> store, CollectionEventRegister<T> eventRegister, Instantiator instantiator, Namer<? super T> namer) {
+        super(type, store, eventRegister, instantiator, namer);
+        this.convention = new DefaultConvention(instantiator);
+        this.dynamicObject = new ExtensibleDynamicObject(this, new ContainerDynamicObject(elementsDynamicObject), convention);
+    }
+
+    protected AbstractPolymorphicDomainObjectContainer(AbstractPolymorphicDomainObjectContainer<? super T> collection, CollectionFilter<T> filter, Instantiator instantiator, Namer<? super T> namer) {
+        this(filter.getType(), collection.filteredStore(filter), collection.filteredEvents(filter), instantiator, namer);
     }
 
     protected abstract <U extends T> U doCreate(String name, Class<U> type);
@@ -82,6 +99,11 @@ public abstract class AbstractPolymorphicDomainObjectContainer<T>
     protected Object createConfigureDelegate(Closure configureClosure) {
         return new PolymorphicDomainObjectContainerConfigureDelegate(configureClosure.getOwner(), this);
     }
+
+    // TODO(daniel): Implement this
+//    protected <S extends T> Set<? extends S> filteredTypes(CollectionFilter<S> filter) {
+//        return new FilteredSet<Class<? extends T>, S>(getCreateableTypes(), filter);
+//    }
 
     private class ContainerDynamicObject extends CompositeDynamicObject {
         private ContainerDynamicObject(ContainerElementsDynamicObject elementsDynamicObject) {
@@ -146,8 +168,30 @@ public abstract class AbstractPolymorphicDomainObjectContainer<T>
         }
     }
 
-    public <U extends T> NamedDomainObjectContainer<U> containerWithType(Class<U> type) {
-        return getInstantiator().newInstance(TypedDomainObjectContainerWrapper.class, type, this, getInstantiator());
+    public <U extends T> PolymorphicDomainObjectContainer<U> containerWithType(Class<U> type) {
+        return new TypedPolymorphicDomainObjectContainerWrapper(this, this.createFilter(type));
     }
 
+    private class TypedPolymorphicDomainObjectContainerWrapper<V> extends AbstractPolymorphicDomainObjectContainer<V> {
+        private final AbstractPolymorphicDomainObjectContainer<? super V> parent;
+        public TypedPolymorphicDomainObjectContainerWrapper(AbstractPolymorphicDomainObjectContainer<? super V> collection, CollectionFilter<V> filter) {
+            super(filter.getType(), collection.filteredStore(filter), new CollectionEventRegister<V>(), collection.getInstantiator(), collection.getNamer());
+            this.parent = collection;
+        }
+
+        @Override
+        protected <U extends V> U doCreate(String name, Class<U> type) {
+            return parent.doCreate(name, type);
+        }
+
+        @Override
+        protected V doCreate(String name) {
+            return parent.doCreate(name, getType());
+        }
+
+        public Set<? extends Class<? extends V>> getCreateableTypes() {
+            // TODO(daniel): Filter this
+            return null;//parent.getCreateableTypes();
+        }
+    }
 }

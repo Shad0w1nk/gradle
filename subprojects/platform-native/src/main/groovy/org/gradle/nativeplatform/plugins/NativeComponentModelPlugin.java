@@ -31,7 +31,6 @@ import org.gradle.language.base.internal.registry.LanguageTransformContainer;
 import org.gradle.language.base.plugins.ComponentModelBasePlugin;
 import org.gradle.language.nativeplatform.HeaderExportingSourceSet;
 import org.gradle.model.*;
-import org.gradle.model.collection.CollectionBuilder;
 import org.gradle.nativeplatform.*;
 import org.gradle.nativeplatform.internal.*;
 import org.gradle.nativeplatform.internal.configure.*;
@@ -76,6 +75,21 @@ public class NativeComponentModelPlugin implements Plugin<ProjectInternal> {
         @ComponentType
         void nativeLibrary(ComponentTypeBuilder<NativeLibrarySpec> builder) {
             builder.defaultImplementation(DefaultNativeLibrarySpec.class);
+        }
+
+        @BinaryType
+        void nativeExecutableBinary(BinaryTypeBuilder<NativeExecutableBinarySpec> builder) {
+            builder.defaultImplementation(DefaultNativeExecutableBinarySpec.class);
+        }
+
+        @BinaryType
+        void staticLibraryBinary(BinaryTypeBuilder<StaticLibraryBinarySpec> builder) {
+            builder.defaultImplementation(DefaultStaticLibraryBinarySpec.class);
+        }
+
+        @BinaryType
+        void sharedLibraryBinary(BinaryTypeBuilder<SharedLibraryBinarySpec> builder) {
+            builder.defaultImplementation(DefaultSharedLibraryBinarySpec.class);
         }
 
         @Model
@@ -131,25 +145,23 @@ public class NativeComponentModelPlugin implements Plugin<ProjectInternal> {
         }
 
         // TODO:DAZ Migrate to @BinaryType and @ComponentBinaries
-        @Mutate
-        public void createNativeBinaries(BinaryContainer binaries, NamedDomainObjectSet<NativeComponentSpec> nativeComponents,
+        @ComponentBinaries
+        public void createNativeBinaries(CollectionBuilder<NativeBinarySpec> binaries, NativeExecutableSpec component,
                                          LanguageTransformContainer languageTransforms, NativeToolChainRegistryInternal toolChains,
-                                         PlatformContainer platforms, BuildTypeContainer buildTypes, FlavorContainer flavors,
-                                         ServiceRegistry serviceRegistry, @Path("buildDir") File buildDir) {
-            Instantiator instantiator = serviceRegistry.get(Instantiator.class);
+                                          PlatformContainer platforms, BuildTypeContainer buildTypes, FlavorContainer flavors,
+                                          ServiceRegistry serviceRegistry, @Path("buildDir") File buildDir) {
             NativeDependencyResolver resolver = serviceRegistry.get(NativeDependencyResolver.class);
             Action<NativeBinarySpec> configureBinaryAction = new NativeBinarySpecInitializer(buildDir);
             Action<NativeBinarySpec> setToolsAction = new ToolSettingNativeBinaryInitializer(languageTransforms);
             @SuppressWarnings("unchecked") Action<NativeBinarySpec> initAction = Actions.composite(configureBinaryAction, setToolsAction, new MarkBinariesBuildable());
-            NativeBinariesFactory factory = new DefaultNativeBinariesFactory(instantiator, initAction, resolver);
+
+            NativeBinariesFactory factory = new DefaultNativeExecutableBinariesFactory(binaries, initAction, resolver);
+
             BinaryNamingSchemeBuilder namingSchemeBuilder = new DefaultBinaryNamingSchemeBuilder();
             Action<NativeComponentSpec> createBinariesAction =
                     new NativeComponentSpecInitializer(factory, namingSchemeBuilder, toolChains, platforms, buildTypes, flavors);
 
-            for (NativeComponentSpec component : nativeComponents) {
-                createBinariesAction.execute(component);
-                binaries.addAll(component.getBinaries());
-            }
+            createBinariesAction.execute(component);
         }
 
         @Mutate

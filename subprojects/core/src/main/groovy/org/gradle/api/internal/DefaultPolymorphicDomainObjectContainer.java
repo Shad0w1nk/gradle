@@ -21,13 +21,12 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import groovy.lang.Closure;
 import org.gradle.api.*;
+import org.gradle.api.internal.collections.CollectionEventRegister;
+import org.gradle.api.internal.collections.CollectionFilter;
 import org.gradle.internal.reflect.Instantiator;
 import org.gradle.model.internal.core.NamedEntityInstantiator;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 public class DefaultPolymorphicDomainObjectContainer<T> extends AbstractPolymorphicDomainObjectContainer<T>
         implements ExtensiblePolymorphicDomainObjectContainer<T> {
@@ -40,6 +39,14 @@ public class DefaultPolymorphicDomainObjectContainer<T> extends AbstractPolymorp
 
     public DefaultPolymorphicDomainObjectContainer(Class<T> type, Instantiator instantiator) {
         this(type, instantiator, Named.Namer.forType(type));
+    }
+
+    protected DefaultPolymorphicDomainObjectContainer(Class<? extends T> type, Set<T> store, CollectionEventRegister<T> eventRegister, Instantiator instantiator, Namer<? super T> namer) {
+        super(type, store, eventRegister, instantiator, namer);
+    }
+
+    protected DefaultPolymorphicDomainObjectContainer(DefaultPolymorphicDomainObjectContainer<? super T> collection, CollectionFilter<T> filter, Instantiator instantiator, Namer<? super T> namer) {
+        this(filter.getType(), collection.filteredStore(filter), collection.filteredEvents(filter), instantiator, namer);
     }
 
     @Override

@@ -32,8 +32,12 @@ import java.util.TreeSet;
 
 public class DefaultNamedDomainObjectSet<T> extends DefaultNamedDomainObjectCollection<T> implements NamedDomainObjectSet<T> {
 
+    public DefaultNamedDomainObjectSet(Class<? extends T> type, Set<T> store, Instantiator instantiator, Namer<? super T> namer) {
+        super(type, store, instantiator, namer);
+    }
+
     public DefaultNamedDomainObjectSet(Class<? extends T> type, Instantiator instantiator, Namer<? super T> namer) {
-        super(type, new TreeSet(new Namer.Comparator(namer)), instantiator, namer);
+        this(type, new TreeSet(new Namer.Comparator(namer)), instantiator, namer);
     }
 
     public DefaultNamedDomainObjectSet(Class<? extends T> type, Instantiator instantiator) {

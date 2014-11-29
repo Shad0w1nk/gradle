@@ -15,7 +15,9 @@
  */
 package org.gradle.nativeplatform;
 
-import org.gradle.api.Incubating;
+import groovy.lang.Closure;
+import org.gradle.api.*;
+import org.gradle.nativeplatform.test.NativeTestSuiteSpec;
 import org.gradle.platform.base.LibrarySpec;
 
 /**
@@ -37,4 +39,8 @@ public interface NativeLibrarySpec extends LibrarySpec, NativeComponentSpec, Tar
      * Converts this library to a native library requirement that uses the api library linkage.
      */
     NativeLibraryRequirement getApi();
+
+    void testSuites(Action<? super PolymorphicDomainObjectContainer<NativeTestSuiteSpec>> action);
+
+    NamedDomainObjectSet<NativeTestSuiteSpec> getTestSuite();
 }

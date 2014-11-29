@@ -16,10 +16,22 @@
 
 package org.gradle.nativeplatform.internal;
 
+import groovy.lang.Closure;
+import org.gradle.api.Action;
+import org.gradle.api.Named;
+import org.gradle.api.NamedDomainObjectSet;
+import org.gradle.api.PolymorphicDomainObjectContainer;
+import org.gradle.api.internal.DefaultNamedDomainObjectSet;
+import org.gradle.api.specs.Spec;
+import org.gradle.internal.reflect.Instantiator;
 import org.gradle.nativeplatform.NativeLibraryRequirement;
 import org.gradle.nativeplatform.NativeLibrarySpec;
+import org.gradle.nativeplatform.test.NativeTestSuiteSpec;
 
 public class DefaultNativeLibrarySpec extends AbstractTargetedNativeComponentSpec implements NativeLibrarySpec {
+    private PolymorphicDomainObjectContainer<NativeTestSuiteSpec> testSuites = null;
+    private DefaultNamedDomainObjectSet<NativeTestSuiteSpec> delegate = null;
+
     public String getDisplayName() {
         return String.format("native library '%s'", getName());
     }
@@ -36,4 +48,34 @@ public class DefaultNativeLibrarySpec extends AbstractTargetedNativeComponentSpe
         return new ProjectNativeLibraryRequirement(getProjectPath(), this.getName(), "api");
     }
 
+    public void setTestSuites(PolymorphicDomainObjectContainer<NativeTestSuiteSpec> testSuites) {
+        this.testSuites = testSuites;
+        testSuites.whenObjectAdded(new Action<NativeTestSuiteSpec>() {
+            public void execute(NativeTestSuiteSpec testSuite) {
+                testSuite.setTestedComponent(DefaultNativeLibrarySpec.this);
+            }
+        });
+    }
+
+    public NamedDomainObjectSet<NativeTestSuiteSpec> getTestSuite() {
+        return testSuites.withType(NativeTestSuiteSpec.class).matching(new Spec<NativeTestSuiteSpec>() {
+            public boolean isSatisfiedBy(NativeTestSuiteSpec library) {
+                return library.getTestedComponent() == DefaultNativeLibrarySpec.this;
+            }
+        });
+    }
+
+    public void testSuites(Action<? super PolymorphicDomainObjectContainer<NativeTestSuiteSpec>> action) {
+        if (testSuites == null) {
+            throw new RuntimeException("Apply a test plugin first.");
+        }
+        action.execute(testSuites);
+    }
+
+    public void testSuites(Closure<Void> configClosure) {
+        if (testSuites == null) {
+            throw new RuntimeException("Apply a test plugin first.");
+        }
+        testSuites.configure(configClosure);
+    }
 }
