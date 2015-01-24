@@ -19,6 +19,7 @@ package org.gradle.platform.base;
 import org.gradle.api.*;
 import org.gradle.internal.HasInternalProtocol;
 import org.gradle.language.base.LanguageSourceSet;
+import org.gradle.platform.base.test.TestSuiteSpec;
 
 /**
  * A software component that is built by a Gradle project.
@@ -45,6 +46,16 @@ public interface ComponentSpec extends Named {
      * Configure the source sets used to build this component.
      */
     void sources(Action<? super PolymorphicDomainObjectContainer<LanguageSourceSet>> action);
+
+    /**
+     * The test suites that are used to test this component.
+     */
+    NamedDomainObjectSet<TestSuiteSpec> getTestSuites();
+
+    /**
+     * Configure the test suites used to test this component.
+     */
+    void testSuites(Action<? super PolymorphicDomainObjectContainer<TestSuiteSpec>> action);
 
     /**
      * The binaries that are built for this component. You can use this to configure the binaries for this component.

@@ -34,7 +34,11 @@ model {
         ${toolChain.buildScriptConfig}
     }
     components {
-        someExe(NativeExecutableSpec)
+        someExe(NativeExecutableSpec) {
+            testSuites {
+                someExeTest(GoogleTestTestSuiteSpec)
+            }
+        }
     }
 }
 """

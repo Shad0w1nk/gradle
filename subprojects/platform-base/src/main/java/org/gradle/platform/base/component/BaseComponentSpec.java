@@ -16,10 +16,7 @@
 
 package org.gradle.platform.base.component;
 
-import org.gradle.api.Action;
-import org.gradle.api.DomainObjectSet;
-import org.gradle.api.Incubating;
-import org.gradle.api.PolymorphicDomainObjectContainer;
+import org.gradle.api.*;
 import org.gradle.api.internal.DefaultDomainObjectSet;
 import org.gradle.internal.reflect.Instantiator;
 import org.gradle.internal.reflect.ObjectInstantiationException;
@@ -27,6 +24,9 @@ import org.gradle.language.base.FunctionalSourceSet;
 import org.gradle.language.base.LanguageSourceSet;
 import org.gradle.platform.base.*;
 import org.gradle.platform.base.internal.ComponentSpecInternal;
+import org.gradle.platform.base.internal.test.DefaultTestSuiteContainer;
+import org.gradle.platform.base.test.TestSuiteContainer;
+import org.gradle.platform.base.test.TestSuiteSpec;
 
 import java.util.Collections;
 import java.util.Set;
@@ -39,6 +39,7 @@ import java.util.Set;
 public abstract class BaseComponentSpec implements ComponentSpecInternal {
     private static ThreadLocal<ComponentInfo> nextComponentInfo = new ThreadLocal<ComponentInfo>();
     private final FunctionalSourceSet mainSourceSet;
+    private final TestSuiteContainer testSuites;
 
     private final ComponentSpecIdentifier identifier;
     private final String typeName;
@@ -48,7 +49,8 @@ public abstract class BaseComponentSpec implements ComponentSpecInternal {
         if (type.equals(BaseComponentSpec.class)) {
             throw new ModelInstantiationException("Cannot create instance of abstract class BaseComponentSpec.");
         }
-        nextComponentInfo.set(new ComponentInfo(identifier, type.getSimpleName(), mainSourceSet));
+        TestSuiteContainer componentTestSuites = new DefaultTestSuiteContainer(instantiator);
+        nextComponentInfo.set(new ComponentInfo(identifier, type.getSimpleName(), mainSourceSet, componentTestSuites));
         try {
             try {
                 return instantiator.newInstance(type);
@@ -72,6 +74,7 @@ public abstract class BaseComponentSpec implements ComponentSpecInternal {
         this.identifier = info.componentIdentifier;
         this.typeName = info.typeName;
         this.mainSourceSet = info.sourceSets;
+        this.testSuites = info.testSuites;
     }
 
     public String getName() {
@@ -111,6 +114,14 @@ public abstract class BaseComponentSpec implements ComponentSpecInternal {
         action.execute(mainSourceSet);
     }
 
+    public TestSuiteContainer getTestSuites() {
+        return testSuites;
+    }
+
+    public void testSuites(Action<? super PolymorphicDomainObjectContainer<TestSuiteSpec>> action) {
+        action.execute(testSuites);
+    }
+
     public Set<Class<? extends TransformationFileType>> getInputTypes() {
         return Collections.emptySet();
     }
@@ -119,13 +130,16 @@ public abstract class BaseComponentSpec implements ComponentSpecInternal {
         final ComponentSpecIdentifier componentIdentifier;
         final String typeName;
         final FunctionalSourceSet sourceSets;
+        final TestSuiteContainer testSuites;
 
         private ComponentInfo(ComponentSpecIdentifier componentIdentifier,
                               String typeName,
-                              FunctionalSourceSet sourceSets) {
+                              FunctionalSourceSet sourceSets,
+                              TestSuiteContainer testSuites) {
             this.componentIdentifier = componentIdentifier;
             this.typeName = typeName;
             this.sourceSets = sourceSets;
+            this.testSuites = testSuites;
         }
     }
 }

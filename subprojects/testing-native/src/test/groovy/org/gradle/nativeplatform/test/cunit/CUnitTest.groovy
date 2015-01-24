@@ -32,7 +32,11 @@ class CUnitTest extends Specification {
         project.pluginManager.apply(CUnitPlugin)
         project.model {
             components {
-                main(NativeLibrarySpec)
+                main(NativeLibrarySpec) {
+                    testSuites {
+                        mainTest(CUnitTestSuiteSpec)
+                    }
+                }
             }
         }
         project.evaluate()

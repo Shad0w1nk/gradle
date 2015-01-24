@@ -17,9 +17,11 @@ package org.gradle.nativeplatform.internal;
 
 import com.google.common.collect.Sets;
 import org.gradle.api.DomainObjectSet;
+import org.gradle.api.NamedDomainObjectSet;
 import org.gradle.nativeplatform.NativeBinarySpec;
 import org.gradle.nativeplatform.NativeComponentSpec;
 import org.gradle.nativeplatform.ObjectFile;
+import org.gradle.nativeplatform.test.NativeTestSuiteSpec;
 import org.gradle.platform.base.TransformationFileType;
 import org.gradle.platform.base.component.BaseComponentSpec;
 import org.gradle.platform.base.internal.ComponentSpecInternal;
@@ -40,6 +42,10 @@ public abstract class AbstractNativeComponentSpec extends BaseComponentSpec impl
 
     public DomainObjectSet<NativeBinarySpec> getNativeBinaries() {
         return getBinaries().withType(NativeBinarySpec.class);
+    }
+
+    public NamedDomainObjectSet<NativeTestSuiteSpec> getNativeTestSuites() {
+        return getTestSuites().withType(NativeTestSuiteSpec.class);
     }
 
     public Set<Class<? extends TransformationFileType>> getInputTypes() {

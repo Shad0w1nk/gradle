@@ -28,11 +28,15 @@ class GoogleTestTest extends Specification {
 
     def "check the correct binary type are created for the test suite"() {
         when:
-        project.apply(plugin: CppPlugin)
-        project.apply(plugin: GoogleTestPlugin)
+        project.pluginManager.apply(CppPlugin)
+        project.pluginManager.apply(GoogleTestPlugin)
         project.model {
             components {
-                main(NativeLibrarySpec)
+                main(NativeLibrarySpec) {
+                    testSuites {
+                        mainTest(GoogleTestTestSuiteSpec)
+                    }
+                }
             }
         }
         project.evaluate()

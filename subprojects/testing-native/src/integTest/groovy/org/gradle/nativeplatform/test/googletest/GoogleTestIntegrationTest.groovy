@@ -65,6 +65,9 @@ model {
     components {
         hello(NativeLibrarySpec) {
             targetPlatform "x86"
+            testSuites {
+                helloTest(GoogleTestTestSuiteSpec)
+            }
         }
     }
 }
@@ -135,6 +138,9 @@ model {
     components {
         hello(NativeLibrarySpec) {
             targetPlatform "x86"
+            testSuites {
+                helloTest(GoogleTestTestSuiteSpec)
+            }
         }
     }
     testSuites {
@@ -254,6 +260,9 @@ model {
                         source.srcDir "src/variant/cpp"
                     }
                 }
+            }
+            testSuites {
+                helloTest(GoogleTestTestSuiteSpec)
             }
         }
     }

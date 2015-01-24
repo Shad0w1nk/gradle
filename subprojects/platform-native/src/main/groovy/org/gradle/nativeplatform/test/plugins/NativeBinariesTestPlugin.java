@@ -25,6 +25,7 @@ import org.gradle.language.nativeplatform.DependentSourceSet;
 import org.gradle.model.*;
 import org.gradle.model.collection.CollectionBuilder;
 import org.gradle.nativeplatform.NativeBinarySpec;
+import org.gradle.nativeplatform.NativeComponentSpec;
 import org.gradle.nativeplatform.internal.NativeBinarySpecInternal;
 import org.gradle.nativeplatform.plugins.NativeComponentPlugin;
 import org.gradle.nativeplatform.tasks.InstallExecutable;
@@ -52,6 +53,14 @@ public class NativeBinariesTestPlugin implements Plugin<Project> {
         TestSuiteContainer testSuites(ServiceRegistry serviceRegistry) {
             Instantiator instantiator = serviceRegistry.get(Instantiator.class);
             return instantiator.newInstance(DefaultTestSuiteContainer.class, instantiator);
+        }
+
+
+        @Mutate
+        public void referenceComponentTestSuiteIntoGlobalContainer(TestSuiteContainer testSuites, NamedDomainObjectSet<NativeComponentSpec> components) {
+            for (NativeComponentSpec component : components) {
+                testSuites.addAll(component.getNativeTestSuites());
+            }
         }
 
         @Finalize

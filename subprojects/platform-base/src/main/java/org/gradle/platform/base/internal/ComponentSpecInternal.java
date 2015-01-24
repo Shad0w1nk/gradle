@@ -19,12 +19,15 @@ package org.gradle.platform.base.internal;
 import org.gradle.language.base.FunctionalSourceSet;
 import org.gradle.platform.base.ComponentSpec;
 import org.gradle.platform.base.TransformationFileType;
+import org.gradle.platform.base.test.TestSuiteContainer;
 
 import java.util.Set;
 
 public interface ComponentSpecInternal extends ComponentSpec {
 
     FunctionalSourceSet getSources();
+
+    TestSuiteContainer getTestSuites();
 
     Set<Class<? extends TransformationFileType>> getInputTypes();
 }

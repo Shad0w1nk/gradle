@@ -27,6 +27,9 @@ model {
     components {
         operators(NativeLibrarySpec) {
             targetPlatform "x86"
+            testSuites {
+                operatorsTest(CUnitTestSuiteSpec)
+            }
         }
     }
 }

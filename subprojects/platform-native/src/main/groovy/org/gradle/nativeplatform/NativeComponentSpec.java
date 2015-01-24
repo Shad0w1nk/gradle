@@ -17,6 +17,8 @@ package org.gradle.nativeplatform;
 
 import org.gradle.api.DomainObjectSet;
 import org.gradle.api.Incubating;
+import org.gradle.api.NamedDomainObjectSet;
+import org.gradle.nativeplatform.test.NativeTestSuiteSpec;
 import org.gradle.platform.base.ComponentSpec;
 
 /**
@@ -30,6 +32,11 @@ public interface NativeComponentSpec extends ComponentSpec {
     DomainObjectSet<NativeBinarySpec> getNativeBinaries();
 
     /**
+     * {@inheritDoc}
+     */
+    NamedDomainObjectSet<NativeTestSuiteSpec> getNativeTestSuites();
+
+    /**
      * The name that is used to construct the output file names when building this component.
      */
     String getBaseName();
@@ -38,4 +45,6 @@ public interface NativeComponentSpec extends ComponentSpec {
      * Sets the name that is used to construct the output file names when building this component.
      */
     void setBaseName(String baseName);
+
+
 }
