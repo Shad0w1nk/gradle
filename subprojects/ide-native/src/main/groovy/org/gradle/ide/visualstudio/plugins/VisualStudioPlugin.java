@@ -16,30 +16,39 @@
 
 package org.gradle.ide.visualstudio.plugins;
 
+import groovy.lang.Closure;
 import org.gradle.api.*;
 import org.gradle.api.internal.file.FileResolver;
 import org.gradle.api.internal.project.ProjectIdentifier;
+import org.gradle.api.internal.project.ProjectInternal;
 import org.gradle.api.internal.resolve.ProjectModelResolver;
+import org.gradle.api.plugins.ExtensionContainer;
 import org.gradle.api.tasks.Delete;
 import org.gradle.api.tasks.TaskContainer;
 import org.gradle.ide.visualstudio.VisualStudioProject;
 import org.gradle.ide.visualstudio.VisualStudioSolution;
-import org.gradle.ide.visualstudio.internal.DefaultVisualStudioExtension;
-import org.gradle.ide.visualstudio.internal.DefaultVisualStudioProject;
-import org.gradle.ide.visualstudio.internal.VisualStudioExtensionInternal;
-import org.gradle.ide.visualstudio.internal.VisualStudioProjectConfiguration;
+import org.gradle.ide.visualstudio.internal.*;
 import org.gradle.ide.visualstudio.tasks.GenerateFiltersFileTask;
 import org.gradle.ide.visualstudio.tasks.GenerateProjectFileTask;
 import org.gradle.ide.visualstudio.tasks.GenerateSolutionFileTask;
 import org.gradle.internal.reflect.Instantiator;
 import org.gradle.internal.service.ServiceRegistry;
 import org.gradle.model.Model;
+import org.gradle.model.ModelMap;
 import org.gradle.model.Mutate;
 import org.gradle.model.RuleSource;
+import org.gradle.model.collection.CollectionBuilder;
+import org.gradle.model.internal.core.ModelPath;
+import org.gradle.model.internal.type.ModelType;
 import org.gradle.nativeplatform.NativeBinarySpec;
 import org.gradle.nativeplatform.NativeComponentSpec;
 import org.gradle.nativeplatform.plugins.NativeComponentModelPlugin;
 import org.gradle.platform.base.BinaryContainer;
+
+import javax.inject.Inject;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.concurrent.Callable;
 
 
 /**
@@ -47,19 +56,106 @@ import org.gradle.platform.base.BinaryContainer;
  */
 @Incubating
 public class VisualStudioPlugin implements Plugin<Project> {
+    private final ServiceRegistry serviceRegistry;
 
-    public void apply(Project project) {
+    @Inject
+    public VisualStudioPlugin(ServiceRegistry serviceRegistry) {
+        this.serviceRegistry = serviceRegistry;
+    }
+
+    public void apply(final Project project) {
         project.getPluginManager().apply(NativeComponentModelPlugin.class);
+
+        // is root? add solution
+
+        // VS (per root) -> project (per component) -- executable? executable : choose between dll & lib
+        Instantiator instantiator = serviceRegistry.get(Instantiator.class);
+        ProjectModelResolver projectModelResolver = serviceRegistry.get(ProjectModelResolver.class);
+        FileResolver fileResolver = serviceRegistry.get(FileResolver.class);
+
+        VisualStudioExtensionInternal visualStudio = project.getExtensions().create("visualStudio", VisualStudioExtensionInternal.class, instantiator, projectModelResolver, fileResolver);
+
+        VisualStudioProjectResolver projectResolver = serviceRegistry.get(VisualStudioProjectResolver.class);
+
+//        if (isRoot(project)) {
+//            // Add default solution
+//            visualStudio.getSolutionRegistry().add(instantiator.newInstance(DefaultVisualStudioSolution.class, project.getRootProject(), fileResolver, projectResolver, instantiator));
+//
+//            // Fill the solution with projects
+//            project.getGradle().projectsEvaluated(new Callable<void>() {
+//                @Override
+//                public void call() throws Exception {
+//                    Set<Project> projects = new HashSet<Project>();
+//                    for (Project it : project.getRootProject().getAllprojects()) {
+//                        if (it.getPlugins().hasPlugin(VisualStudioPlugin.class)) {
+//                            projects.add(it);
+//                            VisualStudioExtensionInternal visualStudio = ((ProjectInternal) it).getModelRegistry().realize(ModelPath.path("visualStudio"), ModelType.of(VisualStudioExtensionInternal.class));
+//                            // Add projects to root solution.
+//                            //visualStudio.getProjectRegistry()
+//                        }
+//                    }
+//                }
+//            });
+//            //visualStudio.getSolutionRegistry().addSolution();
+//            // extension.solution().add()
+//
+//            // rootProject.allprojects.findAll { it.plugins.hasPlugin(VisualStudioPlugin) }
+//        }
+
+//        void hookDeduplicationToTheRoot(Project project) {
+//            if (isRoot(project)) {
+//                project.gradle.projectsEvaluated {
+//                    makeSureModuleNamesAreUnique()
+//                }
+//            }
+//        }
+    }
+
+    private boolean isRoot(Project project) {
+        return project.getParent() == null;
     }
 
     static class Rules extends RuleSource {
         @Model
-        public static VisualStudioExtensionInternal visualStudio(ServiceRegistry serviceRegistry) {
-            Instantiator instantiator = serviceRegistry.get(Instantiator.class);
-            ProjectModelResolver projectModelResolver = serviceRegistry.get(ProjectModelResolver.class);
-            FileResolver fileResolver = serviceRegistry.get(FileResolver.class);
+        public static VisualStudioExtensionInternal visualStudio(ExtensionContainer extensions) {
+            return extensions.getByType(VisualStudioExtensionInternal.class);
+        }
 
-            return instantiator.newInstance(DefaultVisualStudioExtension.class, instantiator, projectModelResolver, fileResolver);
+        // Rule to add project to the model based on component
+        @Mutate
+        public static void createDefaultSolution(final VisualStudioExtensionInternal visualStudio) {
+            if (visualStudio.isRoot()) {
+                visualStudio.getRootProject().getGradle().projectsEvaluated(new Closure<Void>(this) {
+                    @Override
+                    public Void call() {
+                        Set<Project> projects = new HashSet<Project>();
+                        for (Project it : visualStudio.getRootProject().getAllprojects()) {
+                            if (it.getPlugins().hasPlugin(VisualStudioPlugin.class)) {
+                                projects.add(it);
+                                VisualStudioExtensionInternal projectVisualStudio = ((ProjectInternal) it).getModelRegistry().realize(ModelPath.path("visualStudio"), ModelType.of(VisualStudioExtensionInternal.class));
+                                // Add projects to root solution.
+                                //visualStudio.getProjectRegistry()
+                            }
+                        }
+                        return super.call();
+                    }
+                });
+            }
+        }
+
+        @Mutate
+        public static void createProjects(final VisualStudioExtensionInternal visualStudio, ModelMap<NativeComponentSpec> components, ServiceRegistry serviceRegistry) {
+            final FileResolver fileResolver = serviceRegistry.get(FileResolver.class);
+            final Instantiator instantiator = serviceRegistry.get(Instantiator.class);
+
+            components.all(new Action<NativeComponentSpec>() {
+                @Override
+                public void execute(NativeComponentSpec component) {
+                    System.out.println(component.getProjectPath());
+                    DefaultVisualStudioProjectEx vsProject = new DefaultVisualStudioProjectEx("bob", component, fileResolver, instantiator);
+                    //visualStudio.getProjectRegistryEx().add(vsProject);
+                }
+            });
         }
 
         @Mutate

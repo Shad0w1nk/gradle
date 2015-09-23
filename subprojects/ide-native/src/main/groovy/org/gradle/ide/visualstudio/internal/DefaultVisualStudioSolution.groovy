@@ -75,6 +75,7 @@ class DefaultVisualStudioSolution extends AbstractBuildableModelElement implemen
     }
 
     private void addDependentConfigurations(Set configurations, VisualStudioProjectConfiguration configuration) {
+        // TODO: HERE!!!!
         for (NativeLibraryBinary library : configuration.binary.dependentBinaries) {
             if (library instanceof NativeBinarySpecInternal) {
                 VisualStudioProjectConfiguration libraryConfiguration = vsProjectResolver.lookupProjectConfiguration(library);

@@ -59,6 +59,23 @@ model {
 """
     }
 
+    def "TEST"() {
+        when:
+        app.writeSources(file("src/main"))
+        buildFile << """
+model {
+    components {
+        main(NativeExecutableSpec)
+    }
+}
+"""
+        and:
+        run "visualStudio"
+
+        then:
+        executedAndNotSkipped ":mainExeVisualStudio"
+    }
+
     def "create visual studio solution for single executable"() {
         when:
         app.writeSources(file("src/main"))

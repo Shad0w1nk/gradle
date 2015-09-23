@@ -16,10 +16,22 @@
 
 package org.gradle.ide.visualstudio.internal;
 
+import org.gradle.api.DomainObjectSet;
+import org.gradle.api.NamedDomainObjectSet;
+import org.gradle.api.internal.project.ProjectInternal;
 import org.gradle.ide.visualstudio.VisualStudioExtension;
+import org.gradle.ide.visualstudio.VisualStudioProject;
+import org.gradle.model.Managed;
+import org.gradle.model.ModelSet;
 
 public interface VisualStudioExtensionInternal extends VisualStudioExtension {
     VisualStudioProjectRegistry getProjectRegistry();
 
     VisualStudioSolutionRegistry getSolutionRegistry();
+
+    VisualStudioProjectRegistryEx getProjectRegistryEx();
+
+    boolean isRoot();
+
+    ProjectInternal getRootProject();
 }
