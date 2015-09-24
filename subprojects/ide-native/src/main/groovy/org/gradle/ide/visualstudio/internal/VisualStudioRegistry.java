@@ -1,5 +1,5 @@
 /*
- * Copyright 2014 the original author or authors.
+ * Copyright 2015 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,18 +16,11 @@
 
 package org.gradle.ide.visualstudio.internal;
 
-import org.gradle.api.Project;
-import org.gradle.api.internal.project.ProjectInternal;
-import org.gradle.ide.visualstudio.VisualStudioExtension;
-import org.gradle.model.ModelMap;
+import org.gradle.model.Managed;
 import org.gradle.model.ModelSet;
 
-public interface VisualStudioExtensionInternal extends VisualStudioExtension {
-    VisualStudioProjectRegistry getProjectRegistry();
-
-    VisualStudioSolutionRegistry getSolutionRegistry();
-
-    boolean isRoot();
-
-    Project getProject();
+@Managed
+public interface VisualStudioRegistry {
+    ModelSet<DefaultVisualStudioProject> getProjects();
+    ModelSet<DefaultVisualStudioSolution> getSolutions();
 }

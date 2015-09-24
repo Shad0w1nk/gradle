@@ -70,6 +70,7 @@ model {
 }
 """
         and:
+        run "tasks"
         run "visualStudio"
 
         then:

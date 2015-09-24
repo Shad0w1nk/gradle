@@ -15,29 +15,22 @@
  */
 package org.gradle.ide.visualstudio.internal;
 
+import org.gradle.api.internal.AbstractNamedDomainObjectContainer;
 import org.gradle.api.internal.DefaultNamedDomainObjectSet;
 import org.gradle.api.internal.file.FileResolver;
 import org.gradle.internal.reflect.Instantiator;
 
-public class VisualStudioSolutionRegistry extends DefaultNamedDomainObjectSet<DefaultVisualStudioSolution> {
+public class VisualStudioSolutionRegistry extends AbstractNamedDomainObjectContainer<DefaultVisualStudioSolution> {
     private final FileResolver fileResolver;
-    private final VisualStudioProjectResolver projectResolver;
+    //private final VisualStudioProjectResolver projectResolver;
 
-    public VisualStudioSolutionRegistry(FileResolver fileResolver, VisualStudioProjectResolver projectResolver, Instantiator instantiator) {
+    public VisualStudioSolutionRegistry(FileResolver fileResolver, /*VisualStudioProjectResolver projectResolver, */Instantiator instantiator) {
         super(DefaultVisualStudioSolution.class, instantiator);
         this.fileResolver = fileResolver;
-        this.projectResolver = projectResolver;
     }
 
-    public void addSolution(DefaultVisualStudioProject visualStudioProject) {
-        for (DefaultVisualStudioSolution solution : this) {
-            if (solution.getRootProject() == visualStudioProject) {
-                return;
-            }
-        }
-
-        DefaultVisualStudioSolution solution = getInstantiator().newInstance(
-                DefaultVisualStudioSolution.class, visualStudioProject, fileResolver, projectResolver, getInstantiator());
-        add(solution);
+    @Override
+    protected DefaultVisualStudioSolution doCreate(String name) {
+        return getInstantiator().newInstance(DefaultVisualStudioSolution.class, name, fileResolver, getInstantiator());
     }
 }

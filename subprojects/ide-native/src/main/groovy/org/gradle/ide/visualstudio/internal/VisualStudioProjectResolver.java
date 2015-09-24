@@ -24,22 +24,22 @@ import org.gradle.model.internal.type.ModelType;
 import org.gradle.nativeplatform.NativeBinarySpec;
 
 public class VisualStudioProjectResolver {
-    private final ProjectModelResolver projectModelResolver;
-
-    public VisualStudioProjectResolver(ProjectModelResolver projectModelResolver) {
-        this.projectModelResolver = projectModelResolver;
-    }
-
-    public VisualStudioProjectConfiguration lookupProjectConfiguration(NativeBinarySpec nativeBinary) {
-        // Looks in the correct project registry for this binary
-        VisualStudioExtension visualStudioExtension = getComponentModel(nativeBinary).realize(ModelPath.path("visualStudio"), ModelType.of(VisualStudioExtension.class));
-        VisualStudioProjectRegistry projectRegistry = ((VisualStudioExtensionInternal) visualStudioExtension).getProjectRegistry();
-        return projectRegistry.getProjectConfiguration(nativeBinary);
-    }
-
-    private ModelRegistry getComponentModel(NativeBinarySpec nativeBinary) {
-        String projectPath = nativeBinary.getComponent().getProjectPath();
-        return projectModelResolver.resolveProjectModel(projectPath);
-    }
+//    private final ProjectModelResolver projectModelResolver;
+//
+//    public VisualStudioProjectResolver(ProjectModelResolver projectModelResolver) {
+//        this.projectModelResolver = projectModelResolver;
+//    }
+//
+//    public VisualStudioProjectConfiguration lookupProjectConfiguration(NativeBinarySpec nativeBinary) {
+//        // Looks in the correct project registry for this binary
+//        VisualStudioExtension visualStudioExtension = getComponentModel(nativeBinary).realize(ModelPath.path("visualStudio"), ModelType.of(VisualStudioExtension.class));
+//        VisualStudioProjectRegistry projectRegistry = ((VisualStudioExtensionInternal) visualStudioExtension).getProjectRegistry();
+//        return projectRegistry.getProjectConfiguration(nativeBinary);
+//    }
+//
+//    private ModelRegistry getComponentModel(NativeBinarySpec nativeBinary) {
+//        String projectPath = nativeBinary.getComponent().getProjectPath();
+//        return projectModelResolver.resolveProjectModel(projectPath);
+//    }
 }
 

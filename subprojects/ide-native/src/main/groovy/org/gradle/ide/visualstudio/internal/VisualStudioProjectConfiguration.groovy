@@ -15,6 +15,8 @@
  */
 
 package org.gradle.ide.visualstudio.internal
+
+import org.gradle.api.Named
 import org.gradle.api.plugins.ExtensionAware
 import org.gradle.language.PreprocessingTool
 import org.gradle.language.nativeplatform.HeaderExportingSourceSet
@@ -22,22 +24,34 @@ import org.gradle.nativeplatform.NativeBinarySpec
 import org.gradle.nativeplatform.internal.NativeBinarySpecInternal
 import org.gradle.nativeplatform.toolchain.internal.MacroArgsConverter
 
-class VisualStudioProjectConfiguration {
-    private final DefaultVisualStudioProject vsProject
-    private final String configurationName
-    private final String platformName
-    final NativeBinarySpecInternal binary
+class VisualStudioProjectConfiguration implements Named {
+//    private final DefaultVisualStudioProject vsProject
+//    private final String configurationName
+//    private final String platformName
+    private final String name;
+    NativeBinarySpec binary
     final String type = "Makefile"
 
-    VisualStudioProjectConfiguration(DefaultVisualStudioProject vsProject, String configurationName, String platformName, NativeBinarySpec binary) {
-        this.vsProject = vsProject
-        this.configurationName = configurationName
-        this.platformName = platformName
-        this.binary = binary as NativeBinarySpecInternal
+//    VisualStudioProjectConfiguration(DefaultVisualStudioProject vsProject, String configurationName, String platformName, NativeBinarySpec binary) {
+//        this.vsProject = vsProject
+//        this.configurationName = configurationName
+//        this.platformName = platformName
+//        this.binary = binary as NativeBinarySpecInternal
+//    }
+    VisualStudioProjectConfiguration(String name) {
+        this.name = name;
+    }
+
+    NativeBinarySpec getBinary() {
+        return binary;
+    }
+
+    void setBinary(NativeBinarySpec binary) {
+        this.binary = binary;
     }
 
     String getName() {
-        return "${configurationName}|${platformName}"
+        return name;//"${configurationName}|${platformName}"
     }
 
     String getConfigurationName() {

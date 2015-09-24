@@ -28,16 +28,16 @@ import org.gradle.nativeplatform.NativeComponentSpec
 import org.gradle.nativeplatform.internal.NativeBinarySpecInternal
 
 class DefaultVisualStudioSolution extends AbstractBuildableModelElement implements VisualStudioSolution {
-    final DefaultVisualStudioProject rootProject
+    //final DefaultVisualStudioProject rootProject
     private final String name
     private final SolutionFile solutionFile
-    private final VisualStudioProjectResolver vsProjectResolver
+    //private final VisualStudioProjectResolver vsProjectResolver
 
-    DefaultVisualStudioSolution(DefaultVisualStudioProject rootProject, FileResolver fileResolver,
-                                VisualStudioProjectResolver vsProjectResolver, Instantiator instantiator) {
-        this.rootProject = rootProject
-        this.name = rootProject.name
-        this.vsProjectResolver = vsProjectResolver
+    DefaultVisualStudioSolution(String name,/*DefaultVisualStudioProject rootProject,*/ FileResolver fileResolver,
+                                /*VisualStudioProjectResolver vsProjectResolver,*/ Instantiator instantiator) {
+        //this.rootProject = rootProject
+        this.name = name;
+        //this.vsProjectResolver = vsProjectResolver
         this.solutionFile = instantiator.newInstance(SolutionFile, fileResolver, "${name}.sln" as String)
     }
 
@@ -64,7 +64,7 @@ class DefaultVisualStudioSolution extends AbstractBuildableModelElement implemen
     }
 
     List<VisualStudioProjectConfiguration> getSolutionConfigurations() {
-        return rootProject.configurations
+        return null//rootProject.configurations
     }
 
     List<VisualStudioProjectConfiguration> getProjectConfigurations(VisualStudioProjectConfiguration solutionConfiguration) {
@@ -88,7 +88,7 @@ class DefaultVisualStudioSolution extends AbstractBuildableModelElement implemen
 
     static class SolutionFile implements TextConfigFile {
         private final List<Action<? super TextProvider>> actions = new ArrayList<Action<? super TextProvider>>();
-        private final FileResolver fileResolver
+        private final FileResolver fileResolver;
         private Object location
 
         SolutionFile(FileResolver fileResolver, String defaultLocation) {
@@ -97,11 +97,11 @@ class DefaultVisualStudioSolution extends AbstractBuildableModelElement implemen
         }
 
         File getLocation() {
-            return fileResolver.resolve(location)
+            return location;
         }
 
         void setLocation(Object location) {
-            this.location = location
+            this.location = location;
         }
 
         void withContent(Action<? super TextProvider> action) {
