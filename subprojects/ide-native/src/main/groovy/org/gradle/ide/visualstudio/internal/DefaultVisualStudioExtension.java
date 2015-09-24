@@ -16,29 +16,19 @@
 
 package org.gradle.ide.visualstudio.internal;
 
-import org.gradle.api.DomainObjectSet;
-import org.gradle.api.NamedDomainObjectSet;
-import org.gradle.api.Project;
 import org.gradle.api.Transformer;
-import org.gradle.api.internal.DefaultDomainObjectSet;
 import org.gradle.api.internal.file.FileResolver;
-import org.gradle.api.internal.project.ProjectInternal;
-import org.gradle.api.internal.resolve.ProjectModelResolver;
-import org.gradle.api.internal.rules.ModelMapCreators;
 import org.gradle.ide.visualstudio.VisualStudioProject;
 import org.gradle.ide.visualstudio.VisualStudioSolution;
-import org.gradle.internal.Actions;
 import org.gradle.internal.Factories;
 import org.gradle.internal.reflect.Instantiator;
-import org.gradle.model.Managed;
 import org.gradle.model.ModelMap;
-import org.gradle.model.ModelSet;
-import org.gradle.model.Unmanaged;
-import org.gradle.model.collection.internal.ModelMapModelProjection;
 import org.gradle.model.collection.internal.PolymorphicModelMapProjection;
 import org.gradle.model.internal.core.*;
 import org.gradle.model.internal.core.rule.describe.ModelRuleDescriptor;
 import org.gradle.model.internal.core.rule.describe.SimpleModelRuleDescriptor;
+import org.gradle.model.internal.manage.schema.ModelSchemaStore;
+import org.gradle.model.internal.manage.schema.SpecializedMapSchema;
 import org.gradle.model.internal.registry.RuleContext;
 import org.gradle.model.internal.type.ModelType;
 import org.gradle.model.internal.type.ModelTypes;
@@ -51,11 +41,11 @@ public class DefaultVisualStudioExtension implements VisualStudioExtensionIntern
     private final MutableModelNode modelNode;
     //private Project project;
 
-    public DefaultVisualStudioExtension(MutableModelNode modelNode, final Instantiator instantiator, final FileResolver fileResolver) {
+    public DefaultVisualStudioExtension(MutableModelNode modelNode, final Instantiator instantiator, final FileResolver fileResolver, ModelSchemaStore schemaStore) {
         this.modelNode = modelNode;
 
         modelNode.addLink(
-            createNode(modelNode.getPath().child("solutions"), VisualStudioSolution.class, VisualStudioSolutionRegistry.class, new SimpleModelRuleDescriptor(modelNode.getPath() + ".solutions"), instantiator, fileResolver));
+            createNode(modelNode.getPath().child("solutions"), VisualStudioSolution.class, VisualStudioSolutionRegistry.class, ((SpecializedMapSchema<VisualStudioSolutionRegistry>) schemaStore.getSchema(ModelType.of(VisualStudioSolutionRegistry.class))).getImplementationType().asSubclass(VisualStudioSolutionRegistry.class), new SimpleModelRuleDescriptor(modelNode.getPath() + ".solutions"), instantiator, fileResolver));
 
 
 //        modelNode.addLink(
@@ -95,16 +85,7 @@ public class DefaultVisualStudioExtension implements VisualStudioExtensionIntern
 //                };
 //            }
 //        });
-        modelNode.addLink(
-            createNode(modelNode.getPath().child("projects"), VisualStudioProject.class, VisualStudioProjectRegistry.class, new SimpleModelRuleDescriptor(modelNode.getPath() + ".projects"), instantiator, fileResolver));
 
-
-//            ModelCreators.of(
-//            ModelReference.of(modelNode.getPath().child("projects"), projectRegistryType), Factories.<VisualStudioProjectRegistry>constantNull())
-//                    .descriptor(modelNode.getDescriptor(), ".projects")
-//                    .withProjection(new SpecializedModelMapProjection<VisualStudioProjectRegistry, VisualStudioProject>(projectRegistryType, projectType, VisualStudioProjectRegistry.class, projectFactory))
-//                    .withProjection(PolymorphicModelMapProjection.of(projectType, projectFactory))
-//                    .build());
 
 //        modelNode.addLink(
 //            ModelCreators.of(
@@ -125,15 +106,26 @@ public class DefaultVisualStudioExtension implements VisualStudioExtensionIntern
 //                            }
 //                        })
 //                    )
-//                )
+//                ).withProjection(UnmanagedModelProjection.of(VisualStudioProjectRegistry.class))
+//                //.withProjection(new SpecializedModelMapProjection<VisualStudioProjectRegistry, VisualStudioProject>(ModelType.of(VisualStudioProjectRegistry.class), ModelType.of(VisualStudioProject.class), ModelType.of(VisualStudioProjectRegistry.class), null)))
 //                .build()
 //        );
+        modelNode.addLink(
+            createNode(
+                modelNode.getPath().child("projects"),
+                VisualStudioProject.class,
+                VisualStudioProjectRegistry.class,
+                ((SpecializedMapSchema<VisualStudioProjectRegistry>) schemaStore.getSchema(ModelType.of(VisualStudioProjectRegistry.class))).getImplementationType().asSubclass(VisualStudioProjectRegistry.class),
+                new SimpleModelRuleDescriptor(modelNode.getPath() + ".projects"),
+                instantiator,
+                fileResolver));
+
         projects = modelNode.getLink("projects");
     }
 
-    private static <T, C extends ModelMap<T>> ModelCreator createNode(ModelPath path, final Class<T> typeClass, Class<C> containerClass, ModelRuleDescriptor descriptor, final Instantiator instantiator, final FileResolver fileResolver) {
+    private static <T, C extends ModelMap<T>> ModelCreator createNode(ModelPath path, final Class<T> typeClass, Class<C> containerClass, Class<? extends C> viewClass, ModelRuleDescriptor descriptor, final Instantiator instantiator, final FileResolver fileResolver) {
         ModelType<C> registryType = ModelType.of(containerClass);
-        ModelType<T> type = ModelType.of(typeClass);
+        ModelType<T> modelType = ModelType.of(typeClass);
         ChildNodeInitializerStrategy<T> factory = NodeBackedModelMap.createUsingParentNode(new Transformer<NamedEntityInstantiator<T>, MutableModelNode>() {
             @Override
             public NamedEntityInstantiator<T> transform(MutableModelNode modelNode) {
@@ -148,8 +140,8 @@ public class DefaultVisualStudioExtension implements VisualStudioExtensionIntern
         return ModelCreators.of(
             ModelReference.of(path, registryType), Factories.<C>constantNull())
             .descriptor(descriptor)
-            .withProjection(new SpecializedModelMapProjection<C, T>(registryType, type, containerClass, factory))
-            .withProjection(PolymorphicModelMapProjection.of(type, factory))
+            .withProjection(new SpecializedModelMapProjection<C, T>(registryType, modelType, viewClass, factory))
+            .withProjection(PolymorphicModelMapProjection.of(modelType, factory))
             .build();
     }
 
@@ -164,11 +156,11 @@ public class DefaultVisualStudioExtension implements VisualStudioExtensionIntern
 
     public ModelMap<VisualStudioSolution> getSolutions() {
         solutions.ensureUsable();
-                return solutions.asWritable(
-                    ModelTypes.modelMap(VisualStudioSolution.class),
-                    RuleContext.nest(modelNode.toString() + ".getSolutions()"),
-                    Collections.<ModelView<?>>emptyList()
-                ).getInstance();
+        return solutions.asWritable(
+            ModelTypes.modelMap(VisualStudioSolution.class),
+            RuleContext.nest(modelNode.toString() + ".getSolutions()"),
+            Collections.<ModelView<?>>emptyList()
+        ).getInstance();
     }
 
 //    public boolean isRoot() {

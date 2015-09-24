@@ -43,6 +43,7 @@ import org.gradle.nativeplatform.NativeBinarySpec;
 import org.gradle.nativeplatform.NativeComponentSpec;
 import org.gradle.nativeplatform.plugins.NativeComponentModelPlugin;
 import org.gradle.platform.base.BinarySpec;
+import org.gradle.platform.base.ComponentSpecContainer;
 
 import javax.inject.Inject;
 
@@ -95,7 +96,7 @@ public class VisualStudioPlugin implements Plugin<Project> {
         ModelCreator vsCreator = ModelCreators.unmanagedInstanceOf(ModelReference.of(vsPath, modelType), new Transformer<VisualStudioExtensionInternal, MutableModelNode>() {
             @Override
             public VisualStudioExtensionInternal transform(MutableModelNode modelNode) {
-                return new DefaultVisualStudioExtension(modelNode, instantiator, fileResolver);
+                return new DefaultVisualStudioExtension(modelNode, instantiator, fileResolver, schemaStore);
             }
         }).build();
         modelRegistry.create(vsCreator);
@@ -210,7 +211,7 @@ public class VisualStudioPlugin implements Plugin<Project> {
 //        }
 
         @Mutate
-        public static void createDefaultSolution(@Path("visualStudio.solutions") ModelMap<VisualStudioSolution> solutions, ProjectIdentifier project, ServiceRegistry serviceRegistry) {
+        public static void createDefaultSolution(@Path("visualStudio.solutions") ModelMap<VisualStudioSolution> solutions, @Path("visualStudio.projects") ModelMap<VisualStudioProject> projects, ProjectIdentifier project, ServiceRegistry serviceRegistry) {
             if (isRoot(project)) {
                 final ProjectRegistry<ProjectInternal> projectRegistry = serviceRegistry.get(ProjectRegistry.class);
                 solutions.create(project.getName(), DefaultVisualStudioSolution.class, new Action<DefaultVisualStudioSolution>() {
@@ -218,7 +219,10 @@ public class VisualStudioPlugin implements Plugin<Project> {
                     public void execute(DefaultVisualStudioSolution visualStudioSolution) {
                         for (ProjectInternal project : projectRegistry.getAllProjects()) {
                             // Exclude current project...
-                            //VisualStudioExtensionInternal visualStudio = project.getModelRegistry().realize(ModelPath.path("visualStudio"), ModelType.of(VisualStudioExtensionInternal.class));
+                            //project.evaluate();
+                            //project.getTasks().discoverTasks();
+                            ModelRegistry modelRegistry = project.getModelRegistry();
+                            VisualStudioProjectRegistry visualStudio = modelRegistry.realize(ModelPath.path("visualStudio.projects"), ModelType.of(VisualStudioProjectRegistry.class));
 
                             System.out.println("BOB");
                         }
@@ -258,7 +262,7 @@ public class VisualStudioPlugin implements Plugin<Project> {
         @Mutate
         public static void createProjects(@Path("visualStudio.projects") ModelMap<VisualStudioProject> projects, ModelMap<NativeComponentSpec> components) {
             for (final NativeComponentSpec component : components) {
-                projects.create(component.getProjectPath().substring(1).replace(":", "_"), DefaultVisualStudioProject.class, new Action<DefaultVisualStudioProject>() {
+                projects.create(component.getProjectPath().substring(1).replace(":", "_") + "_" + component.getName(), DefaultVisualStudioProject.class, new Action<DefaultVisualStudioProject>() {
                     @Override
                     public void execute(DefaultVisualStudioProject vsProject) {
                         vsProject.setComponent(component);
@@ -266,6 +270,9 @@ public class VisualStudioPlugin implements Plugin<Project> {
                 });
             }
         }
+
+        @Finalize
+        public static void fini(@Path("visualStudio.projects") ModelMap<VisualStudioProject> projects) {}
 
 //        //@Mutate
 //        public static void createProjects(final VisualStudioExtensionInternal visualStudio, ModelMap<NativeComponentSpec> components, ServiceRegistry serviceRegistry) {
