@@ -55,7 +55,7 @@ public interface VisualStudioSolution extends Named, BuildableModelElement {
     /**
      * The component that this solution represents.
      */
-    NativeComponentSpec getComponent();
+    //NativeComponentSpec getComponent();
 
     /**
      * Configuration for the generated solution file.

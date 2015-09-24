@@ -18,6 +18,7 @@ package org.gradle.ide.visualstudio;
 
 import org.gradle.api.Incubating;
 import org.gradle.api.NamedDomainObjectSet;
+import org.gradle.model.ModelMap;
 
 /**
  * The configuration for mapping a set of {@link org.gradle.nativeplatform.NativeComponentSpec}s to a Visual Studio project.
@@ -27,10 +28,10 @@ public interface VisualStudioExtension {
     /**
      * The {@link VisualStudioProject}s generated.
      */
-    NamedDomainObjectSet<? extends VisualStudioProject> getProjects();
+    ModelMap<VisualStudioProject> getProjects();
 
     /**
      * The {@link VisualStudioSolution}s generated.
      */
-    NamedDomainObjectSet<? extends VisualStudioSolution> getSolutions();
+    ModelMap<VisualStudioSolution> getSolutions();
 }

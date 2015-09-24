@@ -23,14 +23,15 @@ import org.gradle.ide.visualstudio.VisualStudioProject
 import org.gradle.ide.visualstudio.VisualStudioSolution
 import org.gradle.internal.reflect.Instantiator
 import org.gradle.api.internal.AbstractBuildableModelElement
+import org.gradle.model.Managed
 import org.gradle.nativeplatform.NativeLibraryBinary
 import org.gradle.nativeplatform.NativeComponentSpec
 import org.gradle.nativeplatform.internal.NativeBinarySpecInternal
 
-class DefaultVisualStudioSolution extends AbstractBuildableModelElement implements VisualStudioSolution {
+public class DefaultVisualStudioSolution extends AbstractBuildableModelElement implements VisualStudioSolution {
     //final DefaultVisualStudioProject rootProject
-    private final String name
-    private final SolutionFile solutionFile
+    private final String name;
+    private SolutionFile solutionFile;
     //private final VisualStudioProjectResolver vsProjectResolver
 
     DefaultVisualStudioSolution(String name,/*DefaultVisualStudioProject rootProject,*/ FileResolver fileResolver,
@@ -38,20 +39,22 @@ class DefaultVisualStudioSolution extends AbstractBuildableModelElement implemen
         //this.rootProject = rootProject
         this.name = name;
         //this.vsProjectResolver = vsProjectResolver
-        this.solutionFile = instantiator.newInstance(SolutionFile, fileResolver, "${name}.sln" as String)
+        //this.solutionFile = instantiator.newInstance(SolutionFile, fileResolver, String.format("%s.sln", name));
     }
 
-    String getName() {
-        return name
+    public String getName() {
+        return name;
     }
 
-    SolutionFile getSolutionFile() {
-        return solutionFile
+    public SolutionFile getSolutionFile() {
+        return solutionFile;
     }
 
-    NativeComponentSpec getComponent() {
-        return rootProject.component
-    }
+    //public abstract void setSolutionFile(TextConfigFile configFile);
+
+//    NativeComponentSpec getComponent() {
+//        return rootProject.component
+//    }
 
     Set<VisualStudioProject> getProjects() {
         def projects = [] as Set
@@ -62,53 +65,53 @@ class DefaultVisualStudioSolution extends AbstractBuildableModelElement implemen
         }
         return projects
     }
+//
+//    List<VisualStudioProjectConfiguration> getSolutionConfigurations() {
+//        return null//rootProject.configurations
+//    }
+//
+//    List<VisualStudioProjectConfiguration> getProjectConfigurations(VisualStudioProjectConfiguration solutionConfiguration) {
+//        def configurations = [] as Set
+//        configurations << solutionConfiguration
+//        addDependentConfigurations(configurations, solutionConfiguration)
+//        return configurations as List
+//    }
+//
+//    private void addDependentConfigurations(Set configurations, VisualStudioProjectConfiguration configuration) {
+//        // TODO: HERE!!!!
+//        for (NativeLibraryBinary library : configuration.binary.dependentBinaries) {
+//            if (library instanceof NativeBinarySpecInternal) {
+//                VisualStudioProjectConfiguration libraryConfiguration = vsProjectResolver.lookupProjectConfiguration(library);
+//                if (configurations.add(libraryConfiguration)) {
+//                    addDependentConfigurations(configurations, libraryConfiguration)
+//                }
+//            }
+//        }
+//    }
 
-    List<VisualStudioProjectConfiguration> getSolutionConfigurations() {
-        return null//rootProject.configurations
-    }
-
-    List<VisualStudioProjectConfiguration> getProjectConfigurations(VisualStudioProjectConfiguration solutionConfiguration) {
-        def configurations = [] as Set
-        configurations << solutionConfiguration
-        addDependentConfigurations(configurations, solutionConfiguration)
-        return configurations as List
-    }
-
-    private void addDependentConfigurations(Set configurations, VisualStudioProjectConfiguration configuration) {
-        // TODO: HERE!!!!
-        for (NativeLibraryBinary library : configuration.binary.dependentBinaries) {
-            if (library instanceof NativeBinarySpecInternal) {
-                VisualStudioProjectConfiguration libraryConfiguration = vsProjectResolver.lookupProjectConfiguration(library);
-                if (configurations.add(libraryConfiguration)) {
-                    addDependentConfigurations(configurations, libraryConfiguration)
-                }
-            }
-        }
-    }
-
-    static class SolutionFile implements TextConfigFile {
+    public static class SolutionFile implements TextConfigFile {
         private final List<Action<? super TextProvider>> actions = new ArrayList<Action<? super TextProvider>>();
         private final FileResolver fileResolver;
         private Object location
 
-        SolutionFile(FileResolver fileResolver, String defaultLocation) {
+        public SolutionFile(FileResolver fileResolver, String defaultLocation) {
             this.fileResolver = fileResolver
             this.location = defaultLocation
         }
 
-        File getLocation() {
+        public File getLocation() {
             return location;
         }
 
-        void setLocation(Object location) {
+        public void setLocation(Object location) {
             this.location = location;
         }
 
-        void withContent(Action<? super TextProvider> action) {
+        public void withContent(Action<? super TextProvider> action) {
             actions.add(action)
         }
 
-        List<Action<? super TextProvider>> getTextActions() {
+        public List<Action<? super TextProvider>> getTextActions() {
             return actions
         }
     }

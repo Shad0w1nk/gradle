@@ -15,22 +15,8 @@
  */
 package org.gradle.ide.visualstudio.internal;
 
-import org.gradle.api.internal.AbstractNamedDomainObjectContainer;
-import org.gradle.api.internal.DefaultNamedDomainObjectSet;
-import org.gradle.api.internal.file.FileResolver;
-import org.gradle.internal.reflect.Instantiator;
+import org.gradle.ide.visualstudio.VisualStudioSolution;
+import org.gradle.model.ModelMap;
 
-public class VisualStudioSolutionRegistry extends AbstractNamedDomainObjectContainer<DefaultVisualStudioSolution> {
-    private final FileResolver fileResolver;
-    //private final VisualStudioProjectResolver projectResolver;
-
-    public VisualStudioSolutionRegistry(FileResolver fileResolver, /*VisualStudioProjectResolver projectResolver, */Instantiator instantiator) {
-        super(DefaultVisualStudioSolution.class, instantiator);
-        this.fileResolver = fileResolver;
-    }
-
-    @Override
-    protected DefaultVisualStudioSolution doCreate(String name) {
-        return getInstantiator().newInstance(DefaultVisualStudioSolution.class, name, fileResolver, getInstantiator());
-    }
+public interface VisualStudioSolutionRegistry extends ModelMap<VisualStudioSolution> {
 }

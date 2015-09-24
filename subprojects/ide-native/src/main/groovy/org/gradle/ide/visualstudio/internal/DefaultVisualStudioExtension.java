@@ -19,51 +19,167 @@ package org.gradle.ide.visualstudio.internal;
 import org.gradle.api.DomainObjectSet;
 import org.gradle.api.NamedDomainObjectSet;
 import org.gradle.api.Project;
+import org.gradle.api.Transformer;
 import org.gradle.api.internal.DefaultDomainObjectSet;
 import org.gradle.api.internal.file.FileResolver;
 import org.gradle.api.internal.project.ProjectInternal;
 import org.gradle.api.internal.resolve.ProjectModelResolver;
+import org.gradle.api.internal.rules.ModelMapCreators;
 import org.gradle.ide.visualstudio.VisualStudioProject;
 import org.gradle.ide.visualstudio.VisualStudioSolution;
+import org.gradle.internal.Actions;
+import org.gradle.internal.Factories;
 import org.gradle.internal.reflect.Instantiator;
 import org.gradle.model.Managed;
+import org.gradle.model.ModelMap;
+import org.gradle.model.ModelSet;
 import org.gradle.model.Unmanaged;
+import org.gradle.model.collection.internal.ModelMapModelProjection;
+import org.gradle.model.collection.internal.PolymorphicModelMapProjection;
+import org.gradle.model.internal.core.*;
+import org.gradle.model.internal.core.rule.describe.ModelRuleDescriptor;
+import org.gradle.model.internal.core.rule.describe.SimpleModelRuleDescriptor;
+import org.gradle.model.internal.registry.RuleContext;
+import org.gradle.model.internal.type.ModelType;
+import org.gradle.model.internal.type.ModelTypes;
+
+import java.util.Collections;
 
 public class DefaultVisualStudioExtension implements VisualStudioExtensionInternal {
-    private final VisualStudioProjectRegistry projectRegistry;
-    private final VisualStudioSolutionRegistry solutionRegistry;
-    private final Project project;
+    private final MutableModelNode solutions;
+    private final MutableModelNode projects;
+    private final MutableModelNode modelNode;
+    //private Project project;
 
-    public DefaultVisualStudioExtension(Instantiator instantiator, FileResolver fileResolver, Project project) {
-        //VisualStudioProjectMapper projectMapper = new VisualStudioProjectMapper();
-        //projectRegistry = new VisualStudioProjectRegistry(fileResolver, projectMapper, instantiator);
-        projectRegistry = new VisualStudioProjectRegistry(fileResolver/*, projectMapper*/, instantiator);
-        //VisualStudioProjectResolver projectResolver = new VisualStudioProjectResolver(projectModelResolver);
-        solutionRegistry = new VisualStudioSolutionRegistry(fileResolver, instantiator);
-        this.project = project;
+    public DefaultVisualStudioExtension(MutableModelNode modelNode, final Instantiator instantiator, final FileResolver fileResolver) {
+        this.modelNode = modelNode;
+
+        modelNode.addLink(
+            createNode(modelNode.getPath().child("solutions"), VisualStudioSolution.class, VisualStudioSolutionRegistry.class, new SimpleModelRuleDescriptor(modelNode.getPath() + ".solutions"), instantiator, fileResolver));
+
+
+//        modelNode.addLink(
+//            ModelCreators.of(
+//                modelNode.getPath().child("solutions"), Actions.doNothing())
+//                .descriptor(modelNode.getDescriptor(), ".solutions")
+//                .withProjection(
+//                    ModelMapModelProjection.unmanaged(
+//                        VisualStudioSolution.class,
+//                        NodeBackedModelMap.createUsingParentNode(new Transformer<NamedEntityInstantiator<VisualStudioSolution>, MutableModelNode>() {
+//                            @Override
+//                            public NamedEntityInstantiator<VisualStudioSolution> transform(MutableModelNode mutableModelNode) {
+//                                return new NamedEntityInstantiator<VisualStudioSolution>() {
+//                                    @Override
+//                                    public <S extends VisualStudioSolution> S create(String name, Class<S> type) {
+//                                        return instantiator.newInstance(type, name, fileResolver, instantiator);
+//                                    }
+//                                };
+//                            }
+//                        })
+//                    )
+//                )
+//                .build()
+//        );
+        solutions = modelNode.getLink("solutions");
+
+//        ModelType<VisualStudioProjectRegistry> projectRegistryType = ModelType.of(VisualStudioProjectRegistry.class);
+//        ModelType<VisualStudioProject> projectType = ModelType.of(VisualStudioProject.class);
+//        ChildNodeInitializerStrategy<VisualStudioProject> projectFactory = NodeBackedModelMap.createUsingParentNode(new Transformer<NamedEntityInstantiator<VisualStudioProject>, MutableModelNode>() {
+//            @Override
+//            public NamedEntityInstantiator<VisualStudioProject> transform(MutableModelNode mutableModelNode) {
+//                return new NamedEntityInstantiator<VisualStudioProject>() {
+//                    @Override
+//                    public <S extends VisualStudioProject> S create(String name, Class<S> type) {
+//                        return instantiator.newInstance(type, name, fileResolver, instantiator);
+//                    }
+//                };
+//            }
+//        });
+        modelNode.addLink(
+            createNode(modelNode.getPath().child("projects"), VisualStudioProject.class, VisualStudioProjectRegistry.class, new SimpleModelRuleDescriptor(modelNode.getPath() + ".projects"), instantiator, fileResolver));
+
+
+//            ModelCreators.of(
+//            ModelReference.of(modelNode.getPath().child("projects"), projectRegistryType), Factories.<VisualStudioProjectRegistry>constantNull())
+//                    .descriptor(modelNode.getDescriptor(), ".projects")
+//                    .withProjection(new SpecializedModelMapProjection<VisualStudioProjectRegistry, VisualStudioProject>(projectRegistryType, projectType, VisualStudioProjectRegistry.class, projectFactory))
+//                    .withProjection(PolymorphicModelMapProjection.of(projectType, projectFactory))
+//                    .build());
+
+//        modelNode.addLink(
+//            ModelCreators.of(
+//                modelNode.getPath().child("projects"), Actions.doNothing())
+//                .descriptor(modelNode.getDescriptor(), ".projects")
+//                .withProjection(
+//                    ModelMapModelProjection.unmanaged(
+//                        VisualStudioProject.class,
+//                        NodeBackedModelMap.createUsingParentNode(new Transformer<NamedEntityInstantiator<VisualStudioProject>, MutableModelNode>() {
+//                            @Override
+//                            public NamedEntityInstantiator<VisualStudioProject> transform(MutableModelNode mutableModelNode) {
+//                                return new NamedEntityInstantiator<VisualStudioProject>() {
+//                                    @Override
+//                                    public <S extends VisualStudioProject> S create(String name, Class<S> type) {
+//                                        return instantiator.newInstance(type, name, fileResolver, instantiator);
+//                                    }
+//                                };
+//                            }
+//                        })
+//                    )
+//                )
+//                .build()
+//        );
+        projects = modelNode.getLink("projects");
     }
 
-    public NamedDomainObjectSet<? extends VisualStudioProject> getProjects() {
-        return projectRegistry;
+    private static <T, C extends ModelMap<T>> ModelCreator createNode(ModelPath path, final Class<T> typeClass, Class<C> containerClass, ModelRuleDescriptor descriptor, final Instantiator instantiator, final FileResolver fileResolver) {
+        ModelType<C> registryType = ModelType.of(containerClass);
+        ModelType<T> type = ModelType.of(typeClass);
+        ChildNodeInitializerStrategy<T> factory = NodeBackedModelMap.createUsingParentNode(new Transformer<NamedEntityInstantiator<T>, MutableModelNode>() {
+            @Override
+            public NamedEntityInstantiator<T> transform(MutableModelNode modelNode) {
+                return new NamedEntityInstantiator<T>() {
+                    @Override
+                    public <S extends T> S create(String name, Class<S> type) {
+                        return instantiator.newInstance(type, name, fileResolver, instantiator);
+                    }
+                };
+            }
+        });
+        return ModelCreators.of(
+            ModelReference.of(path, registryType), Factories.<C>constantNull())
+            .descriptor(descriptor)
+            .withProjection(new SpecializedModelMapProjection<C, T>(registryType, type, containerClass, factory))
+            .withProjection(PolymorphicModelMapProjection.of(type, factory))
+            .build();
     }
 
-    public VisualStudioProjectRegistry getProjectRegistry() {
-        return projectRegistry;
+    public ModelMap<VisualStudioProject> getProjects() {
+        projects.ensureUsable();
+        return projects.asWritable(
+            ModelTypes.modelMap(VisualStudioProject.class),
+            RuleContext.nest(modelNode.toString() + ".getProjects()"),
+            Collections.<ModelView<?>>emptyList()
+        ).getInstance();
     }
 
-    public NamedDomainObjectSet<? extends VisualStudioSolution> getSolutions() {
-        return solutionRegistry;
+    public ModelMap<VisualStudioSolution> getSolutions() {
+        solutions.ensureUsable();
+                return solutions.asWritable(
+                    ModelTypes.modelMap(VisualStudioSolution.class),
+                    RuleContext.nest(modelNode.toString() + ".getSolutions()"),
+                    Collections.<ModelView<?>>emptyList()
+                ).getInstance();
     }
 
-    public VisualStudioSolutionRegistry getSolutionRegistry() {
-        return solutionRegistry;
-    }
-
-    public boolean isRoot() {
-        return project.getParent() == null;
-    }
-
-    public Project getProject() {
-        return project.getProject();
-    }
+//    public boolean isRoot() {
+//        return project.getParent() == null;
+//    }
+//
+//    public Project getProject() {
+//        return project;
+//    }
+//
+//    public void setProject(Project project) {
+//        this.project = project;
+//    }
 }

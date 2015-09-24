@@ -21,6 +21,6 @@ import org.gradle.model.ModelSet;
 
 @Managed
 public interface VisualStudioRegistry {
-    ModelSet<DefaultVisualStudioProject> getProjects();
+    //ModelSet<DefaultVisualStudioProject> getProjects();
     ModelSet<DefaultVisualStudioSolution> getSolutions();
 }

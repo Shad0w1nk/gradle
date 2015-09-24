@@ -23,11 +23,8 @@ import org.gradle.model.ModelMap;
 import org.gradle.model.ModelSet;
 
 public interface VisualStudioExtensionInternal extends VisualStudioExtension {
-    VisualStudioProjectRegistry getProjectRegistry();
-
-    VisualStudioSolutionRegistry getSolutionRegistry();
-
-    boolean isRoot();
-
-    Project getProject();
+//    boolean isRoot();
+//
+//    Project getProject();
+//    void setProject(Project project);
 }
