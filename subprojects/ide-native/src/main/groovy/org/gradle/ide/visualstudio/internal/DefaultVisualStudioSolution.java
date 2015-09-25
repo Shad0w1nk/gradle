@@ -14,32 +14,36 @@
  * limitations under the License.
  */
 
-package org.gradle.ide.visualstudio.internal
-import org.gradle.api.Action
-import org.gradle.api.internal.file.FileResolver
-import org.gradle.ide.visualstudio.TextConfigFile
-import org.gradle.ide.visualstudio.TextProvider
-import org.gradle.ide.visualstudio.VisualStudioProject
-import org.gradle.ide.visualstudio.VisualStudioSolution
-import org.gradle.internal.reflect.Instantiator
-import org.gradle.api.internal.AbstractBuildableModelElement
-import org.gradle.model.Managed
-import org.gradle.nativeplatform.NativeLibraryBinary
-import org.gradle.nativeplatform.NativeComponentSpec
-import org.gradle.nativeplatform.internal.NativeBinarySpecInternal
+package org.gradle.ide.visualstudio.internal;
+
+import org.gradle.api.Action;
+import org.gradle.api.internal.AbstractBuildableModelElement;
+import org.gradle.api.internal.file.FileResolver;
+import org.gradle.ide.visualstudio.TextConfigFile;
+import org.gradle.ide.visualstudio.TextProvider;
+import org.gradle.ide.visualstudio.VisualStudioProject;
+import org.gradle.ide.visualstudio.VisualStudioSolution;
+import org.gradle.internal.reflect.Instantiator;
+
+import java.io.File;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 public class DefaultVisualStudioSolution extends AbstractBuildableModelElement implements VisualStudioSolution {
     //final DefaultVisualStudioProject rootProject
     private final String name;
-    private SolutionFile solutionFile;
+    private final SolutionFile solutionFile;
+    private final Set<VisualStudioProject> projects = new HashSet<VisualStudioProject>();
     //private final VisualStudioProjectResolver vsProjectResolver
 
-    DefaultVisualStudioSolution(String name,/*DefaultVisualStudioProject rootProject,*/ FileResolver fileResolver,
+    public DefaultVisualStudioSolution(String name,/*DefaultVisualStudioProject rootProject,*/ FileResolver fileResolver,
                                 /*VisualStudioProjectResolver vsProjectResolver,*/ Instantiator instantiator) {
         //this.rootProject = rootProject
         this.name = name;
         //this.vsProjectResolver = vsProjectResolver
-        //this.solutionFile = instantiator.newInstance(SolutionFile, fileResolver, String.format("%s.sln", name));
+        this.solutionFile = instantiator.newInstance(SolutionFile.class, fileResolver, String.format("%s.sln", name));
     }
 
     public String getName() {
@@ -56,14 +60,15 @@ public class DefaultVisualStudioSolution extends AbstractBuildableModelElement i
 //        return rootProject.component
 //    }
 
-    Set<VisualStudioProject> getProjects() {
-        def projects = [] as Set
-        solutionConfigurations.each { solutionConfig ->
-            getProjectConfigurations(solutionConfig).each { projectConfig ->
-                projects << projectConfig.project
-            }
-        }
-        return projects
+    public Set<VisualStudioProject> getProjects() {
+        return projects;
+//        def projects = [] as Set
+//        solutionConfigurations.each { solutionConfig ->
+//            getProjectConfigurations(solutionConfig).each { projectConfig ->
+//                projects << projectConfig.project
+//            }
+//        }
+//        return projects
     }
 //
 //    List<VisualStudioProjectConfiguration> getSolutionConfigurations() {
@@ -92,15 +97,15 @@ public class DefaultVisualStudioSolution extends AbstractBuildableModelElement i
     public static class SolutionFile implements TextConfigFile {
         private final List<Action<? super TextProvider>> actions = new ArrayList<Action<? super TextProvider>>();
         private final FileResolver fileResolver;
-        private Object location
+        private Object location;
 
         public SolutionFile(FileResolver fileResolver, String defaultLocation) {
-            this.fileResolver = fileResolver
-            this.location = defaultLocation
+            this.fileResolver = fileResolver;
+            this.location = defaultLocation;
         }
 
         public File getLocation() {
-            return location;
+            return fileResolver.resolve(location);
         }
 
         public void setLocation(Object location) {
@@ -108,11 +113,11 @@ public class DefaultVisualStudioSolution extends AbstractBuildableModelElement i
         }
 
         public void withContent(Action<? super TextProvider> action) {
-            actions.add(action)
+            actions.add(action);
         }
 
         public List<Action<? super TextProvider>> getTextActions() {
-            return actions
+            return actions;
         }
     }
 }

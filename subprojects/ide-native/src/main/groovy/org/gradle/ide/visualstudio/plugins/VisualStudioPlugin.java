@@ -21,6 +21,7 @@ import org.gradle.api.internal.file.FileResolver;
 import org.gradle.api.internal.project.ProjectIdentifier;
 import org.gradle.api.internal.project.ProjectInternal;
 import org.gradle.api.internal.project.ProjectRegistry;
+import org.gradle.api.internal.project.taskfactory.ITaskFactory;
 import org.gradle.api.internal.resolve.ProjectModelResolver;
 import org.gradle.api.tasks.Delete;
 import org.gradle.api.tasks.TaskContainer;
@@ -211,20 +212,21 @@ public class VisualStudioPlugin implements Plugin<Project> {
 //        }
 
         @Mutate
-        public static void createDefaultSolution(@Path("visualStudio.solutions") ModelMap<VisualStudioSolution> solutions, @Path("visualStudio.projects") ModelMap<VisualStudioProject> projects, ProjectIdentifier project, ServiceRegistry serviceRegistry) {
+        public static void createDefaultSolution(@Path("visualStudio.solutions") ModelMap<VisualStudioSolution> solutions, @Path("visualStudio.projects") ModelMap<VisualStudioProject> projectzs, ProjectIdentifier project, ServiceRegistry serviceRegistry) {
             if (isRoot(project)) {
                 final ProjectRegistry<ProjectInternal> projectRegistry = serviceRegistry.get(ProjectRegistry.class);
                 solutions.create(project.getName(), DefaultVisualStudioSolution.class, new Action<DefaultVisualStudioSolution>() {
                     @Override
-                    public void execute(DefaultVisualStudioSolution visualStudioSolution) {
+                    public void execute(DefaultVisualStudioSolution vsSolution) {
                         for (ProjectInternal project : projectRegistry.getAllProjects()) {
                             // Exclude current project...
                             //project.evaluate();
                             //project.getTasks().discoverTasks();
                             ModelRegistry modelRegistry = project.getModelRegistry();
-                            VisualStudioProjectRegistry visualStudio = modelRegistry.realize(ModelPath.path("visualStudio.projects"), ModelType.of(VisualStudioProjectRegistry.class));
+                            VisualStudioProjectRegistry projects = modelRegistry.realize(ModelPath.path("visualStudio.projects"), ModelType.of(VisualStudioProjectRegistry.class));
 
-                            System.out.println("BOB");
+                            vsSolution.getProjects().addAll(projects.values());
+                            System.out.println("OKKK>....");
                         }
                         //project.
                         //modelResolver.resolveProjectModel()
@@ -262,13 +264,21 @@ public class VisualStudioPlugin implements Plugin<Project> {
         @Mutate
         public static void createProjects(@Path("visualStudio.projects") ModelMap<VisualStudioProject> projects, ModelMap<NativeComponentSpec> components) {
             for (final NativeComponentSpec component : components) {
-                projects.create(component.getProjectPath().substring(1).replace(":", "_") + "_" + component.getName(), DefaultVisualStudioProject.class, new Action<DefaultVisualStudioProject>() {
+                projects.create(generateProjectName(component), DefaultVisualStudioProject.class, new Action<DefaultVisualStudioProject>() {
                     @Override
                     public void execute(DefaultVisualStudioProject vsProject) {
                         vsProject.setComponent(component);
                     }
                 });
             }
+        }
+
+        private static String generateProjectName(NativeComponentSpec component) {
+            String projectPath = component.getProjectPath();
+            if (":".equals(projectPath)) {
+                return component.getName();
+            }
+            return String.format("%s_%s", projectPath.substring(1).replace(":", "_"), component.getName());
         }
 
         @Finalize
@@ -374,24 +384,51 @@ public class VisualStudioPlugin implements Plugin<Project> {
 //            }
 //        }
 
+        // MUTATE before with ITaskFactory @Path("taskFactory")
+        @Finalize
+        public static void createTasksForVisualStudio(VisualStudioExtensionInternal visualStudio, final ITaskFactory taskFactory) {
+            visualStudio.getProjects().all(new Action<VisualStudioProject>() {
+                @Override
+                public void execute(VisualStudioProject vsProject) {
+                    vsProject.builtBy(createProjectsFileTask(taskFactory, vsProject));
+                    vsProject.builtBy(createFiltersFileTask(taskFactory, vsProject));
+                }
+            });
+
+            visualStudio.getSolutions().all(new Action<VisualStudioSolution>() {
+                @Override
+                public void execute(VisualStudioSolution vsSolution) {
+                    Task solutionTask = taskFactory.create(vsSolution.getName() + "VisualStudio", DefaultTask.class);
+                    solutionTask.setDescription(String.format("Generates the '%s' Visual Studio solution file.", vsSolution.getName()));
+                    vsSolution.setBuildTask(solutionTask);
+                    vsSolution.builtBy(createSolutionTask(taskFactory, vsSolution));
+                }
+            });
+        }
+
         @Mutate
         @SuppressWarnings("GroovyUnusedDeclaration")
-        public static void createTasksForVisualStudio(TaskContainer tasks, VisualStudioExtensionInternal visualStudioExtension) {
-            for (VisualStudioProject vsProject : visualStudioExtension.getProjects()) {
-                vsProject.builtBy(createProjectsFileTask(tasks, vsProject));
-                vsProject.builtBy(createFiltersFileTask(tasks, vsProject));
+        public static void createTasksForVisualStudio(TaskContainer tasks, VisualStudioExtensionInternal visualStudio) {
+            for (VisualStudioProject vsProject : visualStudio.getProjects()) {
+//                vsProject.builtBy(createProjectsFileTask(tasks, vsProject));
+//                vsProject.builtBy(createFiltersFileTask(tasks, vsProject));
+                //tasks.add(vsProject.getBuildTask());
+                //tasks.add(vsProject.getBuildDependencies())
             }
 
-            for (VisualStudioSolution vsSolution : visualStudioExtension.getSolutions()) {
-                Task solutionTask = tasks.create(vsSolution.getName() + "VisualStudio");
-                solutionTask.setDescription(String.format("Generates the '%s' Visual Studio solution file.", vsSolution.getName()));
-                vsSolution.setBuildTask(solutionTask);
-                vsSolution.builtBy(createSolutionTask(tasks, vsSolution));
+            for (VisualStudioSolution vsSolution : visualStudio.getSolutions()) {
+//                Task solutionTask = tasks.create(vsSolution.getName() + "VisualStudio");
+//                solutionTask.setDescription(String.format("Generates the '%s' Visual Studio solution file.", vsSolution.getName()));
+//                vsSolution.setBuildTask(solutionTask);
+//                vsSolution.builtBy(createSolutionTask(tasks, vsSolution));
 
                 // Lifecycle task for component
                 //NativeComponentSpec component = vsSolution.getComponent();
                 Task lifecycleTask = tasks.maybeCreate("visualStudio");
                 lifecycleTask.dependsOn(vsSolution);
+                for (VisualStudioProject vsProject : vsSolution.getProjects()) {
+                    lifecycleTask.dependsOn(vsProject);
+                }
                 lifecycleTask.setGroup("IDE");
                 lifecycleTask.setDescription(/*String.format(*/"Generates the Visual Studio solution for %s(maybe rootProject name)."/*, component)*/);
             }
@@ -414,21 +451,21 @@ public class VisualStudioPlugin implements Plugin<Project> {
             cleanTask.setDescription("Removes all generated Visual Studio project and solution files");
         }
 
-        private static Task createSolutionTask(TaskContainer tasks, VisualStudioSolution solution) {
-            GenerateSolutionFileTask solutionFileTask = tasks.create(solution.getName() + "VisualStudioSolution", GenerateSolutionFileTask.class);
+        private static Task createSolutionTask(ITaskFactory taskFactory, VisualStudioSolution solution) {
+            GenerateSolutionFileTask solutionFileTask = taskFactory.create(solution.getName() + "VisualStudioSolution", GenerateSolutionFileTask.class);
             solutionFileTask.setVisualStudioSolution(solution);
             return solutionFileTask;
         }
 
-        private static Task createProjectsFileTask(TaskContainer tasks, VisualStudioProject vsProject) {
-            GenerateProjectFileTask task = tasks.create(vsProject.getName() + "VisualStudioProject", GenerateProjectFileTask.class);
+        private static Task createProjectsFileTask(ITaskFactory taskFactory, VisualStudioProject vsProject) {
+            GenerateProjectFileTask task = taskFactory.create(vsProject.getName() + "VisualStudioProject", GenerateProjectFileTask.class);
             task.setVisualStudioProject(vsProject);
             task.initGradleCommand();
             return task;
         }
 
-        private static Task createFiltersFileTask(TaskContainer tasks, VisualStudioProject vsProject) {
-            GenerateFiltersFileTask task = tasks.create(vsProject.getName() + "VisualStudioFilters", GenerateFiltersFileTask.class);
+        private static Task createFiltersFileTask(ITaskFactory taskFactory, VisualStudioProject vsProject) {
+            GenerateFiltersFileTask task = taskFactory.create(vsProject.getName() + "VisualStudioFilters", GenerateFiltersFileTask.class);
             task.setVisualStudioProject(vsProject);
             return task;
         }
