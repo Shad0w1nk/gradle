@@ -268,6 +268,9 @@ public class VisualStudioPlugin implements Plugin<Project> {
                     @Override
                     public void execute(DefaultVisualStudioProject vsProject) {
                         vsProject.setComponent(component);
+                        for (BinarySpec binary : component.getBinaries()) {
+                            vsProject.source(binary.getSources().values());
+                        }
                     }
                 });
             }
@@ -304,14 +307,24 @@ public class VisualStudioPlugin implements Plugin<Project> {
 
         @Mutate
         public static void createProjectConfigurations(@Path("visualStudio.projects") ModelMap<VisualStudioProject> projects) {
-            projects.all(new Action<VisualStudioProject>() {
+            projects.withType(DefaultVisualStudioProject.class).all(new Action<DefaultVisualStudioProject>() {
                 @Override
-                public void execute(VisualStudioProject vsProject) {
+                public void execute(DefaultVisualStudioProject vsProject) {
                     for (BinarySpec binary : vsProject.getComponent().getBinaries()) {
                         // Create config for each buildable binary
+                        if (binary.isBuildable()) {
+                            VisualStudioProjectConfiguration vsConfiguration = vsProject.getConfigurations().maybeCreate(binary.getName().replace("SharedLibrary", "StaticLibrary"));
+                            vsConfiguration.addBinary(binary);
+                        }
                     }
                 }
             });
+/*
+Solution 1 -> * Project 1 -> * Configuration
+
+
+
+ */
 //            for (final BinarySpec binary : vsProject.getComponent().getBinaries()) {
 //                if (binary.isBuildable()) {
 //                    vsProject.source(binary.getInputs());
