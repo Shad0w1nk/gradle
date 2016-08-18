@@ -35,7 +35,9 @@ public interface LanguageSourceSet extends BuildableComponentSpec {
      */
     SourceDirectorySet getSource();
 
+    //@Deprecated
     void generatedBy(Task generatorTask);
+    void generatedBy(String generatorTaskName);
 
     @Nullable
     String getParentName();

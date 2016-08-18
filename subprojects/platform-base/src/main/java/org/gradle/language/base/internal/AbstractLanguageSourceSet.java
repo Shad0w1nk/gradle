@@ -27,6 +27,7 @@ public abstract class AbstractLanguageSourceSet extends AbstractBuildableCompone
     private final SourceDirectorySet source;
     private boolean generated;
     private Task generatorTask;
+    private String generatorTaskName;
 
     public AbstractLanguageSourceSet(ComponentSpecIdentifier identifier, Class<? extends BuildableComponentSpec> publicType, SourceDirectorySet source) {
         super(identifier, publicType);
@@ -57,11 +58,23 @@ public abstract class AbstractLanguageSourceSet extends AbstractBuildableCompone
     @Override
     public void generatedBy(Task generatorTask) {
         this.generatorTask = generatorTask;
+        this.generatorTaskName = generatorTask.getName();
+    }
+
+    @Override
+    public void generatedBy(String generatorTaskName) {
+        this.generatorTaskName = generatorTaskName;
+        this.generatorTask = null;
     }
 
     @Override
     public Task getGeneratorTask() {
         return generatorTask;
+    }
+
+    @Override
+    public String getGeneratorTaskName() {
+        return generatorTaskName;
     }
 
     @Override

@@ -29,6 +29,9 @@ public interface LanguageSourceSetInternal extends LanguageSourceSet {
      */
     boolean getMayHaveSources();
 
+    //@Deprecated
     Task getGeneratorTask();
+
+    String getGeneratorTaskName();
 
 }
